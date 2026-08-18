@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum ExhibitionStatus {
+  DRAFT
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+enum StallStatus {
+  AVAILABLE
+  HELD
+  BOOKED
+  BLOCKED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum PaymentType {
+  ADVANCE
+  BALANCE
+}
+
+// ============================================================================
+// USER MODELS
+// ============================================================================
+
+/// Represents a regular user who can book stalls.
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  company      String?
+  phone        String?
+  address      String?
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  bookings Booking[]
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+/// Represents an admin user with elevated privileges.
+/// Separate model for clear separation of concerns and security.
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([email])
+}
+
+// ============================================================================
+// EXHIBITION & STALL MODELS
+// ============================================================================
+
+/// Represents an exhibition/trade show event.
+model Exhibition {
+  id          String             @id @default(cuid())
+  name        String
+  description String
+  venue       String
+  startDate   DateTime
+  endDate     DateTime
+  bannerUrl   String?
+  status      ExhibitionStatus   @default(ACTIVE)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  stalls   Stall[]
+  bookings Booking[]
+
+  @@index([status])
+  @@index([startDate])
+  @@index([createdAt])
+}
+
+/// Represents a stall/booth in an exhibition.
+/// Stalls have a 1:1 relationship with Booking to prevent multiple active confirmed bookings.
+model Stall {
+  id               String      @id @default(cuid())
+  stallNumber      String
+  exhibitionId     String
+  exhibition       Exhibition  @relation(fields: [exhibitionId], references: [id], onDelete: Cascade)
+
+  // Physical dimensions
+  width            Decimal     @db.Decimal(10, 2)
+  length           Decimal     @db.Decimal(10, 2)
+  area             Decimal     @db.Decimal(10, 2)
+
+  // Pricing
+  price            Decimal     @db.Decimal(12, 2)
+  advancePercentage Int        @default(50)
+  advanceAmount    Decimal     @db.Decimal(12, 2)
+
+  // Layout positioning (for visual floor plan)
+  positionX        Int
+  positionY        Int
+
+  // Status management
+  status           StallStatus @default(AVAILABLE)
+  /// Timestamp when the stall's HELD status expires (for temporary holds during payment).
+  /// Nullable: only set when status is HELD.
+  heldUntil        DateTime?
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  // Relationship: one-to-one ensures max one active booking per stall
+  booking          Booking?
+
+  @@unique([exhibitionId, stallNumber])
+  @@index([exhibitionId])
+  @@index([status])
+  @@index([exhibitionId, status])
+  @@index([heldUntil]) // For querying expired holds
+}
+
+// ============================================================================
+// BOOKING & PAYMENT MODELS
+// ============================================================================
+
+/// Represents a stall booking by a user.
+/// Booking status and payment status are tracked separately:
+/// - bookingStatus: PENDING → CONFIRMED → CANCELLED
+/// - paymentStatus: PENDING → SUCCESS/FAILED/REFUNDED
+model Booking {
+  id               String        @id @default(cuid())
+  /// Unique, human-readable booking reference (e.g., "BK-2026-001234")
+  bookingNumber    String        @unique
+  
+  userId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  exhibitionId     String
+  exhibition       Exhibition    @relation(fields: [exhibitionId], references: [id], onDelete: Cascade)
+  
+  stallId          String        @unique // Unique ensures one booking per stall
+  stall            Stall         @relation(fields: [stallId], references: [id], onDelete: Cascade)
+
+  // Monetary amounts (stored as precise decimals)
+  totalAmount      Decimal       @db.Decimal(12, 2) // Total stall price
+  advanceAmount    Decimal       @db.Decimal(12, 2) // 50% advance paid
+  remainingAmount  Decimal       @db.Decimal(12, 2) // 50% balance due
+
+  // Status tracking
+  bookingStatus    BookingStatus @default(PENDING)
+  paymentStatus    PaymentStatus @default(PENDING)
+
+  // Audit trail
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  payments         Payment[]
+
+  @@index([userId])
+  @@index([exhibitionId])
+  @@index([stallId])
+  @@index([bookingStatus])
+  @@index([paymentStatus])
+  @@index([userId, createdAt]) // For user's booking history
+  @@index([exhibitionId, createdAt])
+}
+
+/// Represents a payment transaction for a booking.
+/// Records both advance and balance payments, with Razorpay integration.
+model Payment {
+  id               String        @id @default(cuid())
+  
+  bookingId        String
+  booking          Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  // Amount and type
+  amount           Decimal       @db.Decimal(12, 2)
+  paymentType      PaymentType   // ADVANCE or BALANCE
+
+  // Razorpay integration
+  /// Razorpay order ID or payment ID (gateway-provided identifier)
+  paymentGatewayTransactionId String?
+  /// Additional metadata from Razorpay (for webhooks, debugging)
+  /// Stored as JSON for flexibility
+  razorpayMetadata Json?
+
+  // Payment status
+  paymentStatus    PaymentStatus @default(PENDING)
+  
+  // Audit trail
+  paymentDate      DateTime      @default(now())
+  createdAt        DateTime      @default(now())
+
+  @@index([bookingId])
+  @@index([paymentStatus])
+  @@index([paymentDate])
+  @@index([bookingId, createdAt]) // For payment history per booking
+}
