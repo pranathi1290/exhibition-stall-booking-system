@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Public and admin portal for managing exhibition stalls and bookings.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
