@@ -16,14 +16,31 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  let profile;
+  let bookings;
+
   try {
-    const [profile, bookings] = await Promise.all([
+    [profile, bookings] = await Promise.all([
       getUserProfile(),
       getUserBookingHistory(),
     ]);
-
+  } catch (error) {
+    console.error("Dashboard error:", error);
     return (
-      <main className="min-h-screen bg-slate-100 px-6 py-10">
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-10">
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center">
+          <h1 className="text-2xl font-bold text-red-600">Error</h1>
+          <p className="mt-2 text-slate-600">Failed to load dashboard</p>
+          <Link href="/" className="mt-4 inline-block rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white">
+            Back to home
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-100 px-6 py-10">
         <div className="mx-auto max-w-6xl">
           {/* Header */}
           <div className="mb-8 flex items-center justify-between">
@@ -167,20 +184,6 @@ export default async function DashboardPage() {
             )}
           </div>
         </div>
-      </main>
-    );
-  } catch (error) {
-    console.error("Dashboard error:", error);
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-10">
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center">
-          <h1 className="text-2xl font-bold text-red-600">Error</h1>
-          <p className="mt-2 text-slate-600">Failed to load dashboard</p>
-          <Link href="/" className="mt-4 inline-block rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white">
-            Back to home
-          </Link>
-        </div>
-      </main>
-    );
-  }
+    </main>
+  );
 }

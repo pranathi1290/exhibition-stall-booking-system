@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getStallById, updateStall } from "@/lib/admin";
+import type { StallStatus } from "@prisma/client";
 
-export default function EditStallPage({ params }: { params: { id: string; stallId: string } }) {
+export default function EditStallPage({ params }: { params: Promise<{ id: string; stallId: string }> }) {
   const router = useRouter();
+  const { id, stallId } = use(params);
   const [formData, setFormData] = useState({
     stallNumber: "",
     width: "",
@@ -15,7 +17,7 @@ export default function EditStallPage({ params }: { params: { id: string; stallI
     advancePercentage: "50",
     positionX: "0",
     positionY: "0",
-    status: "AVAILABLE" as any,
+    status: "AVAILABLE" as StallStatus,
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,9 +26,9 @@ export default function EditStallPage({ params }: { params: { id: string; stallI
   useEffect(() => {
     async function loadStall() {
       try {
-        const stall = await getStallById(params.stallId);
+        const stall = await getStallById(stallId);
         if (!stall) {
-          router.push(`/admin/exhibitions/${params.id}/stalls`);
+          router.push(`/admin/exhibitions/${id}/stalls`);
           return;
         }
 
@@ -40,7 +42,7 @@ export default function EditStallPage({ params }: { params: { id: string; stallI
           positionY: stall.positionY.toString(),
           status: stall.status,
         });
-      } catch (err) {
+      } catch {
         setError("Failed to load stall");
       } finally {
         setIsLoadingData(false);
@@ -48,7 +50,7 @@ export default function EditStallPage({ params }: { params: { id: string; stallI
     }
 
     loadStall();
-  }, [params.stallId, params.id, router]);
+  }, [stallId, id, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,7 +58,7 @@ export default function EditStallPage({ params }: { params: { id: string; stallI
     setIsLoading(true);
 
     try {
-      await updateStall(params.stallId, {
+      await updateStall(stallId, {
         stallNumber: formData.stallNumber,
         width: parseFloat(formData.width),
         length: parseFloat(formData.length),
@@ -67,10 +69,10 @@ export default function EditStallPage({ params }: { params: { id: string; stallI
         status: formData.status,
       });
 
-      router.push(`/admin/exhibitions/${params.id}/stalls`);
+      router.push(`/admin/exhibitions/${id}/stalls`);
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Failed to update stall");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update stall");
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +109,7 @@ export default function EditStallPage({ params }: { params: { id: string; stallI
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-2xl">
         <header className="mb-8">
-          <Link href={`/admin/exhibitions/${params.id}/stalls`} className="text-sm text-violet-600 hover:text-violet-700 font-semibold mb-2 inline-block">
+          <Link href={`/admin/exhibitions/${id}/stalls`} className="text-sm text-violet-600 hover:text-violet-700 font-semibold mb-2 inline-block">
             ← Back to Stalls
           </Link>
           <h1 className="text-3xl font-bold">Edit Stall</h1>
@@ -286,7 +288,7 @@ export default function EditStallPage({ params }: { params: { id: string; stallI
                 {isLoading ? "Saving..." : "Save Changes"}
               </button>
               <Link
-                href={`/admin/exhibitions/${params.id}/stalls`}
+                href={`/admin/exhibitions/${id}/stalls`}
                 className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Cancel

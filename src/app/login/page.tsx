@@ -25,7 +25,7 @@ export default function LoginPage() {
       } else {
         setError(result.error || "Login failed");
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -33,11 +33,11 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-10">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">Account Access</p>
-        <h1 className="mt-3 text-3xl font-bold">Login</h1>
-        <p className="mt-2 text-sm text-slate-600">Use your registered email and password to continue.</p>
+    <main className="site-shell flex min-h-screen items-center justify-center px-6 py-16">
+      <div className="w-full max-w-md rounded-[2rem] border border-[#17211f]/10 bg-white p-8 shadow-[0_24px_80px_rgba(23,33,31,.12)] sm:p-10">
+        <p className="eyebrow text-[#c94f3d]">Your ExpoSpace account</p>
+        <h1 className="display-title mt-4 text-5xl font-bold">Welcome back.</h1>
+        <p className="mt-4 text-sm leading-6 text-[#17211f]/60">Sign in to manage your reservations and keep your event plans moving.</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div>
@@ -51,7 +51,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
               required
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-emerald-500 disabled:bg-slate-100"
+              className="w-full rounded-xl border border-[#17211f]/15 bg-[#f5f1ea] px-4 py-3 outline-none transition focus:border-[#f26b4f] focus:ring-4 focus:ring-[#f26b4f]/10 disabled:bg-slate-100"
               placeholder="you@example.com"
             />
           </div>
@@ -66,7 +66,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               required
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-emerald-500 disabled:bg-slate-100"
+              className="w-full rounded-xl border border-[#17211f]/15 bg-[#f5f1ea] px-4 py-3 outline-none transition focus:border-[#f26b4f] focus:ring-4 focus:ring-[#f26b4f]/10 disabled:bg-slate-100"
               placeholder="••••••••"
             />
           </div>
@@ -80,7 +80,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-800 disabled:bg-slate-600"
+            className="w-full rounded-xl bg-[#17211f] px-4 py-3 font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-black disabled:bg-slate-600"
           >
             {isLoading ? "Logging in..." : "Continue"}
           </button>

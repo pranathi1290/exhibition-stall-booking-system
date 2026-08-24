@@ -3,20 +3,21 @@ import { getAdminSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getExhibitionById, getStallsByExhibition, getExhibitionStats } from "@/lib/admin";
 
-export default async function ExhibitionStallsPage({ params }: { params: { id: string } }) {
+export default async function ExhibitionStallsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   // Check authentication
   const session = await getAdminSession();
   if (!session) {
     redirect("/admin/login");
   }
 
-  const exhibition = await getExhibitionById(params.id);
+  const exhibition = await getExhibitionById(id);
   if (!exhibition) {
     redirect("/admin/exhibitions");
   }
 
-  const stalls = await getStallsByExhibition(params.id);
-  const stats = await getExhibitionStats(params.id);
+  const stalls = await getStallsByExhibition(id);
+  const stats = await getExhibitionStats(id);
 
   const statusColors: Record<string, string> = {
     AVAILABLE: "bg-green-100 text-green-700",
@@ -39,10 +40,16 @@ export default async function ExhibitionStallsPage({ params }: { params: { id: s
               <p className="text-slate-600 mt-1">{exhibition.venue}</p>
             </div>
             <Link
-              href={`/admin/exhibitions/${params.id}/stalls/create`}
+              href={`/admin/exhibitions/${id}/stalls/create`}
               className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
             >
               + Add Stall
+            </Link>
+            <Link
+              href={`/admin/exhibitions/${id}/layout`}
+              className="rounded-lg border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-100"
+            >
+              Edit Layout
             </Link>
           </div>
         </header>
@@ -71,7 +78,7 @@ export default async function ExhibitionStallsPage({ params }: { params: { id: s
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
             <p className="text-slate-600 mb-4">No stalls yet</p>
             <Link
-              href={`/admin/exhibitions/${params.id}/stalls/create`}
+              href={`/admin/exhibitions/${id}/stalls/create`}
               className="inline-block rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
             >
               Create Your First Stall
@@ -110,13 +117,13 @@ export default async function ExhibitionStallsPage({ params }: { params: { id: s
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <Link
-                            href={`/admin/exhibitions/${params.id}/stalls/${stall.id}/edit`}
+                            href={`/admin/exhibitions/${id}/stalls/${stall.id}/edit`}
                             className="text-sm font-medium text-violet-600 hover:text-violet-700"
                           >
                             Edit
                           </Link>
                           <Link
-                            href={`/admin/exhibitions/${params.id}/stalls/${stall.id}/delete`}
+                            href={`/admin/exhibitions/${id}/stalls/${stall.id}/delete`}
                             className="text-sm font-medium text-red-600 hover:text-red-700"
                           >
                             Delete

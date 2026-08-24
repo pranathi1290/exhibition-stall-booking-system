@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createStall } from "@/lib/admin";
 
-export default function CreateStallPage({ params }: { params: { id: string } }) {
+export default function CreateStallPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { id } = use(params);
   const [formData, setFormData] = useState({
     stallNumber: "",
     width: "",
@@ -26,7 +27,7 @@ export default function CreateStallPage({ params }: { params: { id: string } }) 
 
     try {
       await createStall({
-        exhibitionId: params.id,
+        exhibitionId: id,
         stallNumber: formData.stallNumber,
         width: parseFloat(formData.width),
         length: parseFloat(formData.length),
@@ -36,10 +37,10 @@ export default function CreateStallPage({ params }: { params: { id: string } }) 
         positionY: parseInt(formData.positionY),
       });
 
-      router.push(`/admin/exhibitions/${params.id}/stalls`);
+      router.push(`/admin/exhibitions/${id}/stalls`);
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Failed to create stall");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create stall");
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +65,7 @@ export default function CreateStallPage({ params }: { params: { id: string } }) 
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-2xl">
         <header className="mb-8">
-          <Link href={`/admin/exhibitions/${params.id}/stalls`} className="text-sm text-violet-600 hover:text-violet-700 font-semibold mb-2 inline-block">
+          <Link href={`/admin/exhibitions/${id}/stalls`} className="text-sm text-violet-600 hover:text-violet-700 font-semibold mb-2 inline-block">
             ← Back to Stalls
           </Link>
           <h1 className="text-3xl font-bold">Create Stall</h1>
@@ -229,7 +230,7 @@ export default function CreateStallPage({ params }: { params: { id: string } }) 
                 {isLoading ? "Creating..." : "Create Stall"}
               </button>
               <Link
-                href={`/admin/exhibitions/${params.id}/stalls`}
+                href={`/admin/exhibitions/${id}/stalls`}
                 className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Cancel

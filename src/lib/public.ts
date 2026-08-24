@@ -7,7 +7,8 @@
 
 import { prisma } from "./prisma";
 import { requireUserAuth } from "./user-auth";
-import type { Exhibition, Stall, Booking } from "@prisma/client";
+import { getHoldConflictMessage, HOLD_DURATION_MINUTES, isHoldExpired } from "./booking-workflow";
+import type { Exhibition, Stall, Booking, Prisma } from "@prisma/client";
 
 // ============================================================================
 // PUBLIC QUERIES (no auth needed)
@@ -30,6 +31,14 @@ export async function getPublicExhibitionById(id: string): Promise<Exhibition | 
 }
 
 export async function getPublicStallsByExhibition(exhibitionId: string): Promise<Stall[]> {
+  await prisma.stall.updateMany({
+    where: {
+      exhibitionId,
+      status: "HELD",
+      OR: [{ heldUntil: null }, { heldUntil: { lte: new Date() } }],
+    },
+    data: { status: "AVAILABLE", heldUntil: null, heldByUserId: null },
+  });
   return prisma.stall.findMany({
     where: { exhibitionId },
     orderBy: { stallNumber: "asc" },
@@ -37,8 +46,11 @@ export async function getPublicStallsByExhibition(exhibitionId: string): Promise
 }
 
 export async function getPublicStallById(id: string): Promise<Stall | null> {
-  return prisma.stall.findUnique({
-    where: { id },
+  return prisma.stall.findFirst({
+    where: {
+      id,
+      exhibition: { status: "ACTIVE" },
+    },
   });
 }
 
@@ -46,7 +58,15 @@ export async function getPublicStallById(id: string): Promise<Stall | null> {
 // USER QUERIES (requires auth)
 // ============================================================================
 
-export async function getUserProfile(): Promise<any> {
+export async function getUserProfile(): Promise<Prisma.UserGetPayload<{ select: {
+  id: true;
+  email: true;
+  name: true;
+  company: true;
+  phone: true;
+  address: true;
+  createdAt: true;
+} }> | null> {
   const session = await requireUserAuth();
 
   return prisma.user.findUnique({
@@ -76,7 +96,13 @@ export async function getUserBookingHistory(): Promise<(Booking & { exhibition: 
   });
 }
 
-export async function getUserBookingById(bookingId: string): Promise<any> {
+export async function getUserBookingById(bookingId: string): Promise<Prisma.BookingGetPayload<{
+  include: {
+    exhibition: true;
+    stall: true;
+    payments: true;
+  };
+}> | null> {
   const session = await requireUserAuth();
 
   return prisma.booking.findFirst({
@@ -104,44 +130,31 @@ export async function holdStall(stallId: string): Promise<{ success: boolean; er
   const session = await requireUserAuth();
 
   try {
-    const stall = await prisma.stall.findUnique({
-      where: { id: stallId },
+    const now = new Date();
+    const heldUntil = new Date(now.getTime() + HOLD_DURATION_MINUTES * 60 * 1000);
+    const result = await prisma.$transaction(async (tx) => {
+      const stall = await tx.stall.findUnique({ where: { id: stallId } });
+      if (!stall) return { success: false as const, error: "Stall not found" };
+      if (stall.status === "HELD" && stall.heldByUserId === session.userId && !isHoldExpired(stall.status, stall.heldUntil, now)) {
+        await tx.stall.update({ where: { id: stall.id }, data: { heldUntil } });
+        return { success: true as const };
+      }
+      const claimed = await tx.stall.updateMany({
+        where: {
+          id: stallId,
+          OR: [
+            { status: "AVAILABLE" },
+            { status: "HELD", OR: [{ heldUntil: null }, { heldUntil: { lte: now } }] },
+          ],
+        },
+        data: { status: "HELD", heldUntil, heldByUserId: session.userId },
+      });
+      if (claimed.count === 1) return { success: true as const };
+      const current = await tx.stall.findUnique({ where: { id: stallId } });
+      return { success: false as const, error: current ? getHoldConflictMessage(current.status, current.heldUntil, now) : "Stall not found" };
     });
 
-    if (!stall) {
-      return { success: false, error: "Stall not found" };
-    }
-
-    // Can only hold AVAILABLE stalls
-    if (stall.status !== "AVAILABLE") {
-      return { success: false, error: "Stall is not available" };
-    }
-
-    // Check if user already has a confirmed booking for this stall
-    const existingBooking = await prisma.booking.findFirst({
-      where: {
-        stallId,
-        bookingStatus: "CONFIRMED",
-      },
-    });
-
-    if (existingBooking) {
-      return { success: false, error: "Stall is already booked" };
-    }
-
-    // Set hold expiry to 10 minutes from now
-    const heldUntil = new Date(Date.now() + 10 * 60 * 1000);
-
-    // Update stall to HELD
-    await prisma.stall.update({
-      where: { id: stallId },
-      data: {
-        status: "HELD",
-        heldUntil,
-      },
-    });
-
-    return { success: true };
+    return result;
   } catch (error) {
     console.error("Hold stall error:", error);
     return { success: false, error: "Failed to hold stall" };
@@ -152,27 +165,24 @@ export async function holdStall(stallId: string): Promise<{ success: boolean; er
  * Release hold on stall (user cancels before payment)
  */
 export async function releaseStallHold(stallId: string): Promise<{ success: boolean; error?: string }> {
+  const session = await requireUserAuth();
+
   try {
-    const stall = await prisma.stall.findUnique({
-      where: { id: stallId },
-    });
+    const stall = await prisma.stall.findUnique({ where: { id: stallId } });
 
     if (!stall) {
       return { success: false, error: "Stall not found" };
     }
 
-    if (stall.status !== "HELD") {
+    if (stall.status !== "HELD" || stall.heldByUserId !== session.userId) {
       return { success: false, error: "Stall is not on hold" };
     }
 
     // Revert to AVAILABLE
-    await prisma.stall.update({
+    await prisma.$transaction(async (tx) => tx.stall.update({
       where: { id: stallId },
-      data: {
-        status: "AVAILABLE",
-        heldUntil: null,
-      },
-    });
+      data: { status: "AVAILABLE", heldUntil: null, heldByUserId: null },
+    }));
 
     return { success: true };
   } catch (error) {
@@ -182,8 +192,8 @@ export async function releaseStallHold(stallId: string): Promise<{ success: bool
 }
 
 /**
- * Create a booking with 50% advance payment pending
- * This is called after successful payment
+ * Create a booking with the database-calculated 50% advance pending.
+ * Payment verification confirms the booking later.
  */
 export async function createBooking(data: {
   exhibitionId: string;
@@ -196,73 +206,48 @@ export async function createBooking(data: {
   const session = await requireUserAuth();
 
   try {
-    // Get user
-    const user = await prisma.user.findUnique({
-      where: { id: session.userId },
-    });
-
-    if (!user) {
-      return { success: false, error: "User not found" };
-    }
-
-    // Get stall
-    const stall = await prisma.stall.findUnique({
-      where: { id: data.stallId },
-    });
-
-    if (!stall) {
-      return { success: false, error: "Stall not found" };
-    }
-
-    // Verify stall is held or available
-    if (stall.status !== "HELD" && stall.status !== "AVAILABLE") {
-      return { success: false, error: "Stall is not available" };
-    }
-
-    // Get exhibition
-    const exhibition = await prisma.exhibition.findUnique({
-      where: { id: data.exhibitionId },
-    });
-
-    if (!exhibition) {
-      return { success: false, error: "Exhibition not found" };
-    }
-
-    // Check for existing booking on this stall
-    const existingBooking = await prisma.booking.findFirst({
-      where: {
-        stallId: data.stallId,
-        bookingStatus: "CONFIRMED",
-      },
-    });
-
-    if (existingBooking) {
-      return { success: false, error: "Stall is already booked" };
-    }
-
-    // Create booking number
-    const count = await prisma.booking.count();
-    const bookingNumber = `BK-${new Date().getFullYear()}-${String(count + 1).padStart(6, "0")}`;
-
-    // Create booking with PENDING status (waiting for payment)
-    const booking = await prisma.booking.create({
-      data: {
-        bookingNumber,
-        userId: session.userId,
-        exhibitionId: data.exhibitionId,
-        stallId: data.stallId,
-        totalAmount: stall.price,
-        advanceAmount: stall.advanceAmount,
-        remainingAmount: stall.price.minus(stall.advanceAmount),
-        bookingStatus: "PENDING",
-        paymentStatus: "PENDING",
-      },
+    const booking = await prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const [user, exhibition, stall] = await Promise.all([
+        tx.user.findUnique({ where: { id: session.userId } }),
+        tx.exhibition.findUnique({ where: { id: data.exhibitionId } }),
+        tx.stall.findUnique({ where: { id: data.stallId } }),
+      ]);
+      if (!user) throw new Error("User not found");
+      if (!exhibition) throw new Error("Exhibition not found");
+      if (!stall || stall.exhibitionId !== exhibition.id) throw new Error("Stall not found");
+      if (stall.status !== "HELD" || stall.heldByUserId !== session.userId || !stall.heldUntil || stall.heldUntil <= now) {
+        throw new Error(stall ? getHoldConflictMessage(stall.status, stall.heldUntil, now) : "Stall not found");
+      }
+      const existingBooking = await tx.booking.findUnique({ where: { stallId: stall.id } });
+      if (existingBooking) {
+        if (existingBooking.userId !== session.userId || existingBooking.bookingStatus === "CONFIRMED") {
+          throw new Error("Stall is already booked");
+        }
+        return existingBooking;
+      }
+      const bookingNumber = `BK-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+      return tx.booking.create({
+        data: {
+          bookingNumber,
+          userId: user.id,
+          exhibitionId: exhibition.id,
+          stallId: stall.id,
+          totalAmount: stall.price,
+          advanceAmount: stall.advanceAmount,
+          remainingAmount: stall.price.minus(stall.advanceAmount),
+          bookingStatus: "PENDING",
+          paymentStatus: "PENDING",
+        },
+      });
     });
 
     return { success: true, bookingId: booking.id };
   } catch (error) {
     console.error("Create booking error:", error);
-    return { success: false, error: "Failed to create booking" };
+    const message = error instanceof Error ? error.message : "";
+    const knownConflict = ["Stall is already booked", "Stall is currently held by another user", "Stall is blocked", "Stall is not available"];
+    return { success: false, error: knownConflict.includes(message) ? message : "Failed to create booking" };
   }
 }
 
@@ -307,6 +292,7 @@ export async function confirmBooking(bookingId: string): Promise<{ success: bool
         data: {
           status: "BOOKED",
           heldUntil: null,
+          heldByUserId: null,
         },
       });
     });
@@ -358,6 +344,7 @@ export async function cancelBooking(bookingId: string): Promise<{ success: boole
           data: {
             status: "AVAILABLE",
             heldUntil: null,
+            heldByUserId: null,
           },
         });
       }

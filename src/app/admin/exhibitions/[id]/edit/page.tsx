@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getExhibitionById, updateExhibition } from "@/lib/admin";
+import type { ExhibitionStatus } from "@prisma/client";
 
-export default function EditExhibitionPage({ params }: { params: { id: string } }) {
+export default function EditExhibitionPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { id } = use(params);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -14,7 +16,7 @@ export default function EditExhibitionPage({ params }: { params: { id: string } 
     startDate: "",
     endDate: "",
     bannerUrl: "",
-    status: "ACTIVE" as any,
+    status: "ACTIVE" as ExhibitionStatus,
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +25,7 @@ export default function EditExhibitionPage({ params }: { params: { id: string } 
   useEffect(() => {
     async function loadExhibition() {
       try {
-        const exhibition = await getExhibitionById(params.id);
+        const exhibition = await getExhibitionById(id);
         if (!exhibition) {
           router.push("/admin/exhibitions");
           return;
@@ -38,7 +40,7 @@ export default function EditExhibitionPage({ params }: { params: { id: string } 
           bannerUrl: exhibition.bannerUrl || "",
           status: exhibition.status,
         });
-      } catch (err) {
+      } catch {
         setError("Failed to load exhibition");
       } finally {
         setIsLoadingData(false);
@@ -46,7 +48,7 @@ export default function EditExhibitionPage({ params }: { params: { id: string } 
     }
 
     loadExhibition();
-  }, [params.id, router]);
+  }, [id, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,7 +56,7 @@ export default function EditExhibitionPage({ params }: { params: { id: string } 
     setIsLoading(true);
 
     try {
-      await updateExhibition(params.id, {
+      await updateExhibition(id, {
         name: formData.name,
         description: formData.description,
         venue: formData.venue,
@@ -66,8 +68,8 @@ export default function EditExhibitionPage({ params }: { params: { id: string } 
 
       router.push("/admin/exhibitions");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Failed to update exhibition");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update exhibition");
     } finally {
       setIsLoading(false);
     }

@@ -1,150 +1,60 @@
 import Link from "next/link";
 import { getPublicExhibitions } from "@/lib/public";
 import { getUserSession } from "@/lib/user-auth";
+import ExhibitionImage from "@/components/ExhibitionImage";
+
+const fallbackExhibitionImage =
+  "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=85";
 
 export default async function HomePage() {
   const exhibitions = await getPublicExhibitions();
   const session = await getUserSession();
+  const featured = exhibitions.slice(0, 3);
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-16 text-white">
-        <div className="mx-auto max-w-6xl">
-          <h1 className="text-5xl font-bold">Exhibition Stall Booking</h1>
-          <p className="mt-4 max-w-2xl text-lg text-emerald-50">
-            Browse available exhibition spaces, explore interactive stall maps, and secure your booth in just a few clicks.
-          </p>
-          <div className="mt-8 flex gap-4">
-            <Link
-              href="/exhibitions"
-              className="inline-block rounded-lg bg-white px-6 py-3 font-semibold text-emerald-700 hover:bg-emerald-50"
-            >
-              Browse Exhibitions
-            </Link>
-            {!session && (
-              <Link
-                href="/register"
-                className="inline-block rounded-lg border border-white px-6 py-3 font-semibold text-white hover:bg-emerald-700"
-              >
-                Get Started
-              </Link>
-            )}
-            {session && (
-              <Link
-                href="/dashboard"
-                className="inline-block rounded-lg border border-white px-6 py-3 font-semibold text-white hover:bg-emerald-700"
-              >
-                My Bookings
-              </Link>
-            )}
+    <main className="site-shell min-h-screen bg-[#f5f1ea] text-[#17211f]">
+      <section className="relative isolate min-h-[680px] overflow-hidden bg-[#17211f] px-6 py-20 text-white sm:py-28">
+        <ExhibitionImage src={fallbackExhibitionImage} alt="Exhibition hall prepared for visitors" className="absolute inset-0 -z-20 h-full w-full object-cover opacity-55" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(115deg,rgba(23,33,31,.98)_12%,rgba(23,33,31,.82)_48%,rgba(23,33,31,.34))]" />
+        <div className="absolute -right-24 top-24 -z-10 h-96 w-96 rounded-full border border-[#f7b2a4]/30 bg-[#f26b4f]/20 blur-3xl" />
+        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-20">
+          <div className="reveal max-w-4xl">
+            <p className="eyebrow text-[#f7b2a4]">A better place to be seen</p>
+            <h1 className="display-title mt-6 max-w-4xl text-6xl font-bold sm:text-8xl">Make your next space impossible to miss.</h1>
+            <p className="mt-8 max-w-xl text-lg leading-8 text-white/75">Discover high-energy exhibitions, choose your position on the map, and reserve a booth built for the conversations that matter.</p>
+            <div className="mt-10 flex flex-wrap gap-3">
+              <Link href="/exhibitions" className="rounded-full bg-[#f26b4f] px-6 py-3.5 font-bold text-white shadow-xl shadow-[#f26b4f]/25 transition hover:-translate-y-0.5 hover:bg-[#ff8065]">Explore exhibitions <span className="ml-2">↗</span></Link>
+              <Link href={session ? "/dashboard" : "/register"} className="rounded-full border border-white/35 bg-white/10 px-6 py-3.5 font-bold text-white backdrop-blur transition hover:bg-white/20">{session ? "Open my dashboard" : "Create your profile"}</Link>
+            </div>
+          </div>
+          <div className="reveal reveal-delay-2 grid max-w-3xl grid-cols-3 border-t border-white/25 pt-5 text-sm">
+            <div><p className="text-3xl font-bold text-[#f7b2a4]">{exhibitions.length || "02"}</p><p className="mt-1 text-white/60">Live exhibitions</p></div>
+            <div><p className="text-3xl font-bold text-[#f7b2a4]">10 min</p><p className="mt-1 text-white/60">Stall hold window</p></div>
+            <div><p className="text-3xl font-bold text-[#f7b2a4]">50%</p><p className="mt-1 text-white/60">Advance to confirm</p></div>
           </div>
         </div>
       </section>
 
-      {/* Featured Exhibitions */}
-      <section className="px-6 py-16">
-        <div className="mx-auto max-w-6xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">Featured Events</p>
-          <h2 className="mt-2 text-3xl font-bold">Available Exhibitions</h2>
-          <p className="mt-2 text-slate-600">Choose from our curated list of upcoming exhibitions</p>
-
-          {exhibitions.length > 0 ? (
-            <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {exhibitions.map((exhibition) => (
-                <Link
-                  key={exhibition.id}
-                  href={`/exhibitions/${exhibition.id}`}
-                  className="group rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:border-emerald-300 hover:shadow-md"
-                >
-                  <div className="h-40 overflow-hidden rounded-t-2xl bg-gradient-to-r from-emerald-500 to-teal-600">
-                    {exhibition.bannerUrl && (
-                      <img
-                        src={exhibition.bannerUrl}
-                        alt={exhibition.name}
-                        className="h-full w-full object-cover"
-                      />
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
-                      {new Date(exhibition.startDate).toLocaleDateString("en-IN", {
-                        month: "short",
-                        day: "numeric",
-                      })}{" "}
-                      -{" "}
-                      {new Date(exhibition.endDate).toLocaleDateString("en-IN", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </p>
-                    <h3 className="mt-2 text-xl font-bold text-slate-900">{exhibition.name}</h3>
-                    <p className="mt-2 line-clamp-2 text-sm text-slate-600">{exhibition.description}</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-700">{exhibition.venue}</p>
-                    <div className="mt-4 inline-block rounded-lg bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700 group-hover:bg-emerald-200">
-                      View details →
-                    </div>
-                  </div>
+      <section className="px-6 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div><p className="eyebrow text-[#c94f3d]">The current calendar</p><h2 className="display-title mt-4 max-w-2xl text-5xl font-bold sm:text-6xl">Find the room your brand deserves.</h2></div>
+            <Link href="/exhibitions" className="rounded-full border border-[#17211f]/20 px-5 py-2.5 text-sm font-bold transition hover:border-[#f26b4f] hover:text-[#c94f3d]">View all events ↗</Link>
+          </div>
+          {featured.length > 0 ? (
+            <div className="mt-12 grid gap-6 lg:grid-cols-3">
+              {featured.map((exhibition, index) => (
+                <Link key={exhibition.id} href={`/exhibitions/${exhibition.id}`} className={`group overflow-hidden rounded-[1.75rem] border border-[#17211f]/10 bg-white shadow-[0_16px_50px_rgba(23,33,31,.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(23,33,31,.15)] ${index === 0 ? "lg:col-span-2" : ""}`}>
+                  <div className={`relative overflow-hidden bg-[#d7e7dc] ${index === 0 ? "h-72" : "h-56"}`}><ExhibitionImage src={exhibition.bannerUrl || fallbackExhibitionImage} alt={exhibition.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /><span className="absolute left-5 top-5 rounded-full bg-[#f5f1ea]/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#17211f]">Featured {String(index + 1).padStart(2, "0")}</span></div>
+                  <div className="p-6 sm:p-7"><p className="eyebrow text-[#c94f3d]">{new Date(exhibition.startDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" })} - {new Date(exhibition.endDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</p><h3 className="mt-3 text-2xl font-bold">{exhibition.name}</h3><p className="mt-2 line-clamp-2 text-sm leading-6 text-[#17211f]/65">{exhibition.description}</p><p className="mt-5 text-sm font-bold text-[#17211f]/75">{exhibition.venue} <span className="float-right text-[#c94f3d] transition group-hover:translate-x-1">Explore ↗</span></p></div>
                 </Link>
               ))}
             </div>
-          ) : (
-            <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-12 text-center">
-              <p className="text-slate-600">No exhibitions available at the moment. Check back soon!</p>
-            </div>
-          )}
+          ) : <div className="mt-12 rounded-[1.75rem] border border-dashed border-[#17211f]/20 bg-white/60 p-16 text-center"><p className="font-bold">The next programme is being curated.</p><p className="mt-2 text-sm text-[#17211f]/60">Check back soon for upcoming exhibition opportunities.</p></div>}
         </div>
       </section>
 
-      {/* Features */}
-      <section className="bg-slate-50 px-6 py-16">
-        <div className="mx-auto max-w-6xl">
-          <h2 className="text-center text-3xl font-bold">Why choose us?</h2>
-          <div className="mt-12 grid gap-8 md:grid-cols-3">
-            <div className="rounded-xl bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                <span className="text-lg font-bold text-emerald-700">📍</span>
-              </div>
-              <h3 className="mt-4 text-lg font-bold">Visual Stall Maps</h3>
-              <p className="mt-2 text-slate-600">See every stall's location and availability at a glance with our interactive grid layout</p>
-            </div>
-            <div className="rounded-xl bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                <span className="text-lg font-bold text-emerald-700">✅</span>
-              </div>
-              <h3 className="mt-4 text-lg font-bold">Easy Booking</h3>
-              <p className="mt-2 text-slate-600">Simple registration and one-click booking process to secure your space instantly</p>
-            </div>
-            <div className="rounded-xl bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                <span className="text-lg font-bold text-emerald-700">📊</span>
-              </div>
-              <h3 className="mt-4 text-lg font-bold">Track Status</h3>
-              <p className="mt-2 text-slate-600">Monitor your bookings and payments in real-time from your personal dashboard</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Navigation for authenticated users */}
-      {session && (
-        <section className="border-t border-slate-200 bg-white px-6 py-8">
-          <div className="mx-auto max-w-6xl flex gap-4 justify-center">
-            <Link
-              href="/dashboard"
-              className="rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white hover:bg-emerald-700"
-            >
-              My Bookings
-            </Link>
-            <Link
-              href="/exhibitions"
-              className="rounded-lg bg-slate-200 px-6 py-3 font-semibold text-slate-900 hover:bg-slate-300"
-            >
-              Browse More
-            </Link>
-          </div>
-        </section>
-      )}
+      <section className="overflow-hidden bg-[#b9e4d0] px-6 py-20 sm:py-24"><div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-end"><div><p className="eyebrow text-[#c94f3d]">The ExpoSpace difference</p><h2 className="display-title mt-4 text-5xl font-bold sm:text-6xl">Built around the way events actually happen.</h2></div><div className="grid gap-8 border-t border-[#17211f]/20 pt-7 sm:grid-cols-3"><div><p className="text-3xl">01</p><h3 className="mt-4 font-bold">See the floor</h3><p className="mt-2 text-sm leading-6 text-[#17211f]/65">Choose with context using a live, visual stall map.</p></div><div><p className="text-3xl">02</p><h3 className="mt-4 font-bold">Hold your spot</h3><p className="mt-2 text-sm leading-6 text-[#17211f]/65">Your selected space stays yours while you complete payment.</p></div><div><p className="text-3xl">03</p><h3 className="mt-4 font-bold">Show up ready</h3><p className="mt-2 text-sm leading-6 text-[#17211f]/65">Keep every booking and payment detail in one place.</p></div></div></div></section>
     </main>
   );
 }

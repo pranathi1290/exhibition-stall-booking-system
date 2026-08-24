@@ -45,7 +45,7 @@ export async function verifyToken(token: string): Promise<{ adminId: string } | 
   try {
     const verified = await jwtVerify(token, JWT_SECRET);
     return { adminId: verified.payload.adminId as string };
-  } catch (err) {
+  } catch {
     return null;
   }
 }

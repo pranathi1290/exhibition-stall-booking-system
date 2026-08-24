@@ -6,9 +6,35 @@
 "use server";
 
 import { Prisma } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "./prisma";
 import { requireAdminAuth } from "./auth";
-import type { Exhibition, Stall, ExhibitionStatus, StallStatus } from "@prisma/client";
+import type { Booking, Exhibition, Stall, User, ExhibitionStatus, StallStatus, PaymentType } from "@prisma/client";
+
+const exhibitionFields = {
+  name: z.string().trim().min(1, "Exhibition name is required"),
+  description: z.string().trim().min(1, "Description is required"),
+  venue: z.string().trim().min(1, "Venue is required"),
+  startDate: z.date().refine((date) => !Number.isNaN(date.getTime()), "Invalid start date"),
+  endDate: z.date().refine((date) => !Number.isNaN(date.getTime()), "Invalid end date"),
+  bannerUrl: z.string().trim().url("Banner URL must be valid").optional(),
+};
+
+const stallFields = {
+  stallNumber: z.string().trim().min(1, "Stall number is required"),
+  width: z.number().finite().positive("Width must be a positive number"),
+  length: z.number().finite().positive("Length must be a positive number"),
+  price: z.number().finite().positive("Price must be a positive number"),
+  advancePercentage: z.number().int().min(1).max(100),
+  positionX: z.number().int(),
+  positionY: z.number().int(),
+};
+
+const exhibitionSchema = z.object(exhibitionFields);
+
+function validationMessage(error: z.ZodError) {
+  return error.issues[0]?.message || "Invalid admin input";
+}
 
 // ============================================================================
 // EXHIBITION OPERATIONS
@@ -39,23 +65,24 @@ export async function createExhibition(data: {
 }): Promise<Exhibition> {
   await requireAdminAuth();
 
-  // Validation
-  if (!data.name?.trim()) throw new Error("Exhibition name is required");
-  if (!data.description?.trim()) throw new Error("Description is required");
-  if (!data.venue?.trim()) throw new Error("Venue is required");
-  if (!(data.startDate instanceof Date)) throw new Error("Invalid start date");
-  if (!(data.endDate instanceof Date)) throw new Error("Invalid end date");
-  if (data.startDate >= data.endDate) throw new Error("Start date must be before end date");
+  const parsed = exhibitionSchema.extend({ status: z.enum(["DRAFT", "ACTIVE", "ENDED", "CANCELLED"]).optional() })
+    .superRefine((value, context) => {
+      if (value.startDate >= value.endDate) {
+        context.addIssue({ code: "custom", path: ["endDate"], message: "Start date must be before end date" });
+      }
+    })
+    .safeParse(data);
+  if (!parsed.success) throw new Error(validationMessage(parsed.error));
 
   return prisma.exhibition.create({
     data: {
-      name: data.name.trim(),
-      description: data.description.trim(),
-      venue: data.venue.trim(),
-      startDate: data.startDate,
-      endDate: data.endDate,
-      bannerUrl: data.bannerUrl?.trim() || null,
-      status: data.status || "ACTIVE",
+      name: parsed.data.name,
+      description: parsed.data.description,
+      venue: parsed.data.venue,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+      bannerUrl: parsed.data.bannerUrl || null,
+      status: parsed.data.status || "ACTIVE",
     },
   });
 }
@@ -77,29 +104,24 @@ export async function updateExhibition(
   const existing = await prisma.exhibition.findUnique({ where: { id } });
   if (!existing) throw new Error("Exhibition not found");
 
-  // Validation
-  if (data.name !== undefined && !data.name.trim()) throw new Error("Exhibition name cannot be empty");
-  if (data.description !== undefined && !data.description.trim()) throw new Error("Description cannot be empty");
-  if (data.venue !== undefined && !data.venue.trim()) throw new Error("Venue cannot be empty");
+  const parsed = exhibitionSchema.partial().extend({ status: z.enum(["DRAFT", "ACTIVE", "ENDED", "CANCELLED"]).optional() })
+    .safeParse(data);
+  if (!parsed.success) throw new Error(validationMessage(parsed.error));
 
-  if (data.startDate && data.endDate) {
-    if (data.startDate >= data.endDate) throw new Error("Start date must be before end date");
-  } else if (data.startDate) {
-    if (data.startDate >= existing.endDate) throw new Error("Start date must be before end date");
-  } else if (data.endDate) {
-    if (existing.startDate >= data.endDate) throw new Error("Start date must be before end date");
-  }
+  const startDate = parsed.data.startDate ?? existing.startDate;
+  const endDate = parsed.data.endDate ?? existing.endDate;
+  if (startDate >= endDate) throw new Error("Start date must be before end date");
 
   return prisma.exhibition.update({
     where: { id },
     data: {
-      name: data.name?.trim(),
-      description: data.description?.trim(),
-      venue: data.venue?.trim(),
-      startDate: data.startDate,
-      endDate: data.endDate,
-      bannerUrl: data.bannerUrl?.trim() || null,
-      status: data.status,
+      name: parsed.data.name,
+      description: parsed.data.description,
+      venue: parsed.data.venue,
+      startDate: parsed.data.startDate,
+      endDate: parsed.data.endDate,
+      bannerUrl: parsed.data.bannerUrl || null,
+      status: parsed.data.status,
     },
   });
 }
@@ -151,45 +173,44 @@ export async function createStall(data: {
 }): Promise<Stall> {
   await requireAdminAuth();
 
-  // Validation
-  if (!data.stallNumber?.trim()) throw new Error("Stall number is required");
-  if (!data.exhibitionId?.trim()) throw new Error("Exhibition is required");
-  if (typeof data.width !== "number" || data.width <= 0) throw new Error("Width must be a positive number");
-  if (typeof data.length !== "number" || data.length <= 0) throw new Error("Length must be a positive number");
-  if (typeof data.price !== "number" || data.price <= 0) throw new Error("Price must be a positive number");
+  const parsed = z.object({
+    exhibitionId: z.string().trim().min(1, "Exhibition is required"),
+    ...stallFields,
+    status: z.enum(["AVAILABLE", "HELD", "BOOKED", "BLOCKED"]).optional(),
+  }).safeParse({ ...data, advancePercentage: data.advancePercentage ?? 50 });
+  if (!parsed.success) throw new Error(validationMessage(parsed.error));
 
   // Check exhibition exists
   const exhibition = await prisma.exhibition.findUnique({
-    where: { id: data.exhibitionId },
+    where: { id: parsed.data.exhibitionId },
   });
   if (!exhibition) throw new Error("Exhibition not found");
 
   // Check stall number is unique per exhibition
   const existing = await prisma.stall.findFirst({
     where: {
-      exhibitionId: data.exhibitionId,
-      stallNumber: data.stallNumber.trim(),
+      exhibitionId: parsed.data.exhibitionId,
+      stallNumber: parsed.data.stallNumber,
     },
   });
   if (existing) throw new Error("Stall number already exists for this exhibition");
 
-  const area = new Prisma.Decimal(data.width).times(data.length);
-  const advancePercentage = data.advancePercentage || 50;
-  const advanceAmount = new Prisma.Decimal(data.price).times(advancePercentage).dividedBy(100);
+  const area = new Prisma.Decimal(parsed.data.width).times(parsed.data.length);
+  const advanceAmount = new Prisma.Decimal(parsed.data.price).times(parsed.data.advancePercentage).dividedBy(100);
 
   return prisma.stall.create({
     data: {
-      stallNumber: data.stallNumber.trim(),
-      exhibitionId: data.exhibitionId,
-      width: new Prisma.Decimal(data.width),
-      length: new Prisma.Decimal(data.length),
+      stallNumber: parsed.data.stallNumber,
+      exhibitionId: parsed.data.exhibitionId,
+      width: new Prisma.Decimal(parsed.data.width),
+      length: new Prisma.Decimal(parsed.data.length),
       area,
-      price: new Prisma.Decimal(data.price),
-      advancePercentage,
+      price: new Prisma.Decimal(parsed.data.price),
+      advancePercentage: parsed.data.advancePercentage,
       advanceAmount,
-      positionX: data.positionX,
-      positionY: data.positionY,
-      status: data.status || "AVAILABLE",
+      positionX: parsed.data.positionX,
+      positionY: parsed.data.positionY,
+      status: parsed.data.status || "AVAILABLE",
     },
   });
 }
@@ -212,47 +233,45 @@ export async function updateStall(
   const existing = await prisma.stall.findUnique({ where: { id } });
   if (!existing) throw new Error("Stall not found");
 
-  // Validation
-  if (data.stallNumber !== undefined && !data.stallNumber.trim()) throw new Error("Stall number cannot be empty");
-  if (data.width !== undefined && (typeof data.width !== "number" || data.width <= 0)) {
-    throw new Error("Width must be a positive number");
-  }
-  if (data.length !== undefined && (typeof data.length !== "number" || data.length <= 0)) {
-    throw new Error("Length must be a positive number");
-  }
-  if (data.price !== undefined && (typeof data.price !== "number" || data.price <= 0)) {
-    throw new Error("Price must be a positive number");
-  }
+  const parsed = z.object(stallFields)
+    .partial()
+    .extend({ status: z.enum(["AVAILABLE", "HELD", "BOOKED", "BLOCKED"]).optional() })
+    .safeParse(data);
+  if (!parsed.success) throw new Error(validationMessage(parsed.error));
 
   // Check stall number uniqueness if changing
-  if (data.stallNumber && data.stallNumber !== existing.stallNumber) {
+  if (parsed.data.stallNumber && parsed.data.stallNumber !== existing.stallNumber) {
     const duplicate = await prisma.stall.findFirst({
       where: {
         exhibitionId: existing.exhibitionId,
-        stallNumber: data.stallNumber.trim(),
+        stallNumber: parsed.data.stallNumber,
       },
     });
     if (duplicate) throw new Error("Stall number already exists for this exhibition");
   }
 
   // Recalculate area and advance if needed
-  let updateData: any = { ...data };
-  if (data.stallNumber) updateData.stallNumber = data.stallNumber.trim();
-  if (data.width || data.length) {
-    const width = data.width ?? existing.width;
-    const length = data.length ?? existing.length;
+  const updateData: Prisma.StallUpdateInput = {};
+  if (parsed.data.stallNumber !== undefined) updateData.stallNumber = parsed.data.stallNumber;
+  if (parsed.data.width !== undefined || parsed.data.length !== undefined) {
+    const width = parsed.data.width ?? existing.width;
+    const length = parsed.data.length ?? existing.length;
     updateData.area = new Prisma.Decimal(width).times(length);
   }
-  if (data.price || data.advancePercentage !== undefined) {
-    const price = data.price ?? existing.price;
-    const advancePercentage = data.advancePercentage ?? existing.advancePercentage;
+  if (parsed.data.price !== undefined || parsed.data.advancePercentage !== undefined) {
+    const price = parsed.data.price ?? existing.price;
+    const advancePercentage = parsed.data.advancePercentage ?? existing.advancePercentage;
     updateData.advanceAmount = new Prisma.Decimal(price).times(advancePercentage).dividedBy(100);
   }
 
   // Convert numbers to Decimal
-  if (data.width) updateData.width = new Prisma.Decimal(data.width);
-  if (data.length) updateData.length = new Prisma.Decimal(data.length);
-  if (data.price) updateData.price = new Prisma.Decimal(data.price);
+  if (parsed.data.width !== undefined) updateData.width = new Prisma.Decimal(parsed.data.width);
+  if (parsed.data.length !== undefined) updateData.length = new Prisma.Decimal(parsed.data.length);
+  if (parsed.data.price !== undefined) updateData.price = new Prisma.Decimal(parsed.data.price);
+  if (parsed.data.advancePercentage !== undefined) updateData.advancePercentage = parsed.data.advancePercentage;
+  if (parsed.data.positionX !== undefined) updateData.positionX = parsed.data.positionX;
+  if (parsed.data.positionY !== undefined) updateData.positionY = parsed.data.positionY;
+  if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
 
   return prisma.stall.update({
     where: { id },
@@ -322,4 +341,169 @@ export async function getGlobalStats(): Promise<{
     totalBookings: bookings.length,
     availableStalls: stalls.filter((s) => s.status === "AVAILABLE").length,
   };
+}
+
+type AdminBooking = Booking & {
+  user: Pick<User, "id" | "name" | "email" | "company" | "phone" | "address">;
+  exhibition: Exhibition;
+  stall: Stall;
+  payments: Array<{
+    id: string;
+    amount: Prisma.Decimal;
+    paymentType: PaymentType;
+    paymentGatewayTransactionId: string | null;
+    paymentStatus: string;
+    paymentDate: Date;
+  }>;
+};
+
+export async function getAdminBookings(): Promise<AdminBooking[]> {
+  await requireAdminAuth();
+  return prisma.booking.findMany({
+    include: {
+      user: { select: { id: true, name: true, email: true, company: true, phone: true, address: true } },
+      exhibition: true,
+      stall: true,
+      payments: { orderBy: { paymentDate: "desc" } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function getAdminUsers(): Promise<Array<Pick<User, "id" | "name" | "email" | "company">>> {
+  await requireAdminAuth();
+  return prisma.user.findMany({
+    select: { id: true, name: true, email: true, company: true },
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function createManualBooking(data: {
+  userId: string;
+  exhibitionId: string;
+  stallId: string;
+  advancePaid: boolean;
+}): Promise<Booking> {
+  await requireAdminAuth();
+
+  const parsed = z.object({
+    userId: z.string().min(1),
+    exhibitionId: z.string().min(1),
+    stallId: z.string().min(1),
+    advancePaid: z.boolean(),
+  }).safeParse(data);
+  if (!parsed.success) throw new Error(validationMessage(parsed.error));
+
+  return prisma.$transaction(async (tx) => {
+    const [user, exhibition, stall] = await Promise.all([
+      tx.user.findUnique({ where: { id: parsed.data.userId } }),
+      tx.exhibition.findUnique({ where: { id: parsed.data.exhibitionId } }),
+      tx.stall.findUnique({ where: { id: parsed.data.stallId } }),
+    ]);
+    if (!user) throw new Error("Customer not found");
+    if (!exhibition) throw new Error("Exhibition not found");
+    if (!stall || stall.exhibitionId !== exhibition.id) throw new Error("Stall does not belong to this exhibition");
+    if (stall.status !== "AVAILABLE") throw new Error("Stall is not available");
+
+    const bookingNumber = `BK-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+    const booking = await tx.booking.create({
+      data: {
+        bookingNumber,
+        userId: user.id,
+        exhibitionId: exhibition.id,
+        stallId: stall.id,
+        totalAmount: stall.price,
+        advanceAmount: stall.advanceAmount,
+        remainingAmount: stall.price.minus(stall.advanceAmount),
+        bookingStatus: "CONFIRMED",
+        paymentStatus: parsed.data.advancePaid && stall.price.equals(stall.advanceAmount) ? "SUCCESS" : "PENDING",
+      },
+    });
+
+    await tx.stall.update({ where: { id: stall.id }, data: { status: "BOOKED", heldUntil: null } });
+    if (parsed.data.advancePaid) {
+      await tx.payment.create({
+        data: {
+          bookingId: booking.id,
+          amount: stall.advanceAmount,
+          paymentType: "ADVANCE",
+          paymentStatus: "SUCCESS",
+          paymentDate: new Date(),
+        },
+      });
+    }
+    return booking;
+  });
+}
+
+export async function cancelAdminBooking(bookingId: string): Promise<void> {
+  await requireAdminAuth();
+  if (!z.string().min(1).safeParse(bookingId).success) throw new Error("Booking is required");
+
+  await prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.findUnique({ where: { id: bookingId } });
+    if (!booking) throw new Error("Booking not found");
+    if (booking.bookingStatus === "CANCELLED") throw new Error("Booking is already cancelled");
+
+    await tx.booking.update({ where: { id: booking.id }, data: { bookingStatus: "CANCELLED", paymentStatus: "REFUNDED" } });
+    await tx.stall.updateMany({
+      where: { id: booking.stallId, status: { in: ["BOOKED", "HELD"] } },
+      data: { status: "AVAILABLE", heldUntil: null },
+    });
+  });
+}
+
+export async function recordAdminPayment(data: {
+  bookingId: string;
+  amount: number;
+  paymentType: PaymentType;
+  transactionId?: string;
+}): Promise<void> {
+  await requireAdminAuth();
+  const parsed = z.object({
+    bookingId: z.string().min(1),
+    amount: z.number().finite().positive(),
+    paymentType: z.enum(["ADVANCE", "BALANCE"]),
+    transactionId: z.string().trim().max(200).optional(),
+  }).safeParse(data);
+  if (!parsed.success) throw new Error(validationMessage(parsed.error));
+
+  await prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.findUnique({ where: { id: parsed.data.bookingId }, include: { payments: true } });
+    if (!booking) throw new Error("Booking not found");
+    if (booking.bookingStatus === "CANCELLED") throw new Error("Cannot record payment for a cancelled booking");
+
+    const paid = booking.payments
+      .filter((payment) => payment.paymentStatus === "SUCCESS")
+      .reduce((sum, payment) => sum.plus(payment.amount), new Prisma.Decimal(0));
+    const outstanding = booking.totalAmount.minus(paid);
+    const amount = new Prisma.Decimal(parsed.data.amount);
+    if (amount.greaterThan(outstanding)) throw new Error("Payment exceeds the outstanding balance");
+
+    await tx.payment.create({
+      data: {
+        bookingId: booking.id,
+        amount,
+        paymentType: parsed.data.paymentType,
+        paymentGatewayTransactionId: parsed.data.transactionId?.trim() || null,
+        paymentStatus: "SUCCESS",
+        paymentDate: new Date(),
+      },
+    });
+    if (paid.plus(amount).greaterThanOrEqualTo(booking.totalAmount)) {
+      await tx.booking.update({ where: { id: booking.id }, data: { paymentStatus: "SUCCESS" } });
+    }
+  });
+}
+
+export async function updateStallLayout(stallId: string, positionX: number, positionY: number): Promise<void> {
+  await requireAdminAuth();
+  const parsed = z.object({ stallId: z.string().min(1), positionX: z.number().int(), positionY: z.number().int() })
+    .safeParse({ stallId, positionX, positionY });
+  if (!parsed.success) throw new Error(validationMessage(parsed.error));
+  const result = await prisma.stall.updateMany({
+    where: { id: parsed.data.stallId },
+    data: { positionX: parsed.data.positionX, positionY: parsed.data.positionY },
+  });
+  if (result.count !== 1) throw new Error("Stall not found");
 }

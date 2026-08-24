@@ -49,7 +49,7 @@ export async function verifyToken(token: string): Promise<{ userId: string; type
       userId: verified.payload.userId as string,
       type: verified.payload.type as string,
     };
-  } catch (err) {
+  } catch {
     return null;
   }
 }

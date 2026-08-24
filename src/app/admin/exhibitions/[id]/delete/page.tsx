@@ -1,43 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getExhibitionById, deleteExhibition } from "@/lib/admin";
+import type { Exhibition } from "@prisma/client";
 
-export default function DeleteExhibitionPage({ params }: { params: { id: string } }) {
+export default function DeleteExhibitionPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const [exhibition, setExhibition] = useState<any>(null);
+  const { id } = use(params);
+  const [exhibition, setExhibition] = useState<Exhibition | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     async function loadExhibition() {
       try {
-        const data = await getExhibitionById(params.id);
+        const data = await getExhibitionById(id);
         if (!data) {
           router.push("/admin/exhibitions");
           return;
         }
         setExhibition(data);
-      } catch (err) {
+      } catch {
         setError("Failed to load exhibition");
       }
     }
 
     loadExhibition();
-  }, [params.id, router]);
+  }, [id, router]);
 
   async function handleDelete() {
     setError("");
     setIsLoading(true);
 
     try {
-      await deleteExhibition(params.id);
+      await deleteExhibition(id);
       router.push("/admin/exhibitions");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Failed to delete exhibition");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete exhibition");
       setIsLoading(false);
     }
   }
@@ -68,7 +70,7 @@ export default function DeleteExhibitionPage({ params }: { params: { id: string 
           <div className="mb-6">
             <p className="text-lg font-semibold text-red-900 mb-2">⚠️ Are you sure?</p>
             <p className="text-red-800 mb-4">
-              This will permanently delete the exhibition "<strong>{exhibition.name}</strong>".
+              This will permanently delete the exhibition <strong>&quot;{exhibition.name}&quot;</strong>.
             </p>
             <p className="text-sm text-red-700">
               This action cannot be undone. Make sure there are no active bookings for this exhibition.

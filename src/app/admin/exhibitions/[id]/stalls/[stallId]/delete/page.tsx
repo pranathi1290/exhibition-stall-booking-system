@@ -1,43 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getStallById, deleteStall } from "@/lib/admin";
+import type { Stall } from "@prisma/client";
 
-export default function DeleteStallPage({ params }: { params: { id: string; stallId: string } }) {
+export default function DeleteStallPage({ params }: { params: Promise<{ id: string; stallId: string }> }) {
   const router = useRouter();
-  const [stall, setStall] = useState<any>(null);
+  const { id, stallId } = use(params);
+  const [stall, setStall] = useState<Stall | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     async function loadStall() {
       try {
-        const data = await getStallById(params.stallId);
+        const data = await getStallById(stallId);
         if (!data) {
-          router.push(`/admin/exhibitions/${params.id}/stalls`);
+          router.push(`/admin/exhibitions/${id}/stalls`);
           return;
         }
         setStall(data);
-      } catch (err) {
+      } catch {
         setError("Failed to load stall");
       }
     }
 
     loadStall();
-  }, [params.stallId, params.id, router]);
+  }, [stallId, id, router]);
 
   async function handleDelete() {
     setError("");
     setIsLoading(true);
 
     try {
-      await deleteStall(params.stallId);
-      router.push(`/admin/exhibitions/${params.id}/stalls`);
+      await deleteStall(stallId);
+      router.push(`/admin/exhibitions/${id}/stalls`);
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Failed to delete stall");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete stall");
       setIsLoading(false);
     }
   }
@@ -58,7 +60,7 @@ export default function DeleteStallPage({ params }: { params: { id: string; stal
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-2xl">
         <header className="mb-8">
-          <Link href={`/admin/exhibitions/${params.id}/stalls`} className="text-sm text-violet-600 hover:text-violet-700 font-semibold mb-2 inline-block">
+          <Link href={`/admin/exhibitions/${id}/stalls`} className="text-sm text-violet-600 hover:text-violet-700 font-semibold mb-2 inline-block">
             ← Back to Stalls
           </Link>
           <h1 className="text-3xl font-bold">Delete Stall</h1>
@@ -90,7 +92,7 @@ export default function DeleteStallPage({ params }: { params: { id: string; stal
               {isLoading ? "Deleting..." : "Delete Stall"}
             </button>
             <Link
-              href={`/admin/exhibitions/${params.id}/stalls`}
+              href={`/admin/exhibitions/${id}/stalls`}
               className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
             >
               Cancel

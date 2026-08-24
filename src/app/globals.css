@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f5f1ea;
+  --foreground: #17211f;
+  --ink: #17211f;
+  --paper: #f5f1ea;
+  --coral: #f26b4f;
+  --coral-deep: #c94f3d;
+  --mint: #b9e4d0;
+  --line: rgba(23, 33, 31, 0.14);
 }
 
 @theme inline {
@@ -25,7 +31,9 @@ body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
+  background-image: radial-gradient(rgba(23, 33, 31, 0.08) 0.7px, transparent 0.7px);
+  background-size: 7px 7px;
 }
 
 a {
@@ -35,4 +43,48 @@ a {
 img {
   display: block;
   max-width: 100%;
+}
+
+::selection {
+  background: var(--coral);
+  color: white;
+}
+
+.display-title {
+  letter-spacing: -0.055em;
+  line-height: 0.94;
+}
+
+.eyebrow {
+  letter-spacing: 0.22em;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.site-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+.site-shell::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(115deg, transparent 0 42%, rgba(242, 107, 79, 0.08) 42% 43%, transparent 43% 100%);
+}
+
+.reveal {
+  animation: reveal 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.reveal-delay-1 { animation-delay: 100ms; }
+.reveal-delay-2 { animation-delay: 180ms; }
+.reveal-delay-3 { animation-delay: 260ms; }
+
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
 }

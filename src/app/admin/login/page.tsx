@@ -25,7 +25,7 @@ export default function AdminLoginPage() {
       } else {
         setError(result.error || "Login failed");
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -33,11 +33,11 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-10">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Secure Access</p>
-        <h1 className="mt-3 text-3xl font-bold">Admin Login</h1>
-        <p className="mt-2 text-sm text-slate-600">Sign in to manage exhibitions, stalls, and bookings.</p>
+    <main className="flex min-h-screen items-center justify-center bg-[#17211f] px-6 py-16">
+      <div className="w-full max-w-md rounded-[2rem] border border-white/15 bg-white p-8 shadow-2xl sm:p-10">
+        <p className="eyebrow text-[#c94f3d]">ExpoSpace control room</p>
+        <h1 className="display-title mt-4 text-5xl font-bold">Run the room.</h1>
+        <p className="mt-4 text-sm leading-6 text-[#17211f]/60">Sign in to manage exhibitions, stalls, bookings, and the details behind every event.</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div>
@@ -51,7 +51,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
               required
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-violet-500 disabled:bg-slate-100"
+              className="w-full rounded-xl border border-[#17211f]/15 bg-[#f5f1ea] px-4 py-3 outline-none transition focus:border-[#c94f3d] focus:ring-4 focus:ring-[#f26b4f]/10 disabled:bg-slate-100"
               placeholder="admin@exhibitionbook.com"
             />
           </div>
@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               required
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-violet-500 disabled:bg-slate-100"
+              className="w-full rounded-xl border border-[#17211f]/15 bg-[#f5f1ea] px-4 py-3 outline-none transition focus:border-[#c94f3d] focus:ring-4 focus:ring-[#f26b4f]/10 disabled:bg-slate-100"
               placeholder="••••••••"
             />
           </div>
@@ -80,7 +80,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-xl bg-violet-600 px-4 py-3 font-semibold text-white hover:bg-violet-700 disabled:bg-violet-400"
+            className="w-full rounded-xl bg-[#c94f3d] px-4 py-3 font-semibold text-white shadow-lg shadow-[#c94f3d]/20 transition hover:-translate-y-0.5 hover:bg-[#ad4032] disabled:bg-[#c94f3d]/60"
           >
             {isLoading ? "Logging in..." : "Access dashboard"}
           </button>

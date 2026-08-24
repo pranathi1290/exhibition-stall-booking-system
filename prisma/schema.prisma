@@ -48,17 +48,18 @@ enum PaymentType {
 
 /// Represents a regular user who can book stalls.
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   name         String
   company      String?
   phone        String?
   address      String?
   passwordHash String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  bookings Booking[]
+  bookings   Booking[]
+  heldStalls Stall[]   @relation("HeldStalls")
 
   @@index([email])
   @@index([createdAt])
@@ -67,12 +68,12 @@ model User {
 /// Represents an admin user with elevated privileges.
 /// Separate model for clear separation of concerns and security.
 model AdminUser {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   name         String
   passwordHash String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([email])
 }
@@ -83,21 +84,22 @@ model AdminUser {
 
 /// Represents an exhibition/trade show event.
 model Exhibition {
-  id          String             @id @default(cuid())
+  id          String           @id @default(cuid())
   name        String
   description String
   venue       String
   startDate   DateTime
   endDate     DateTime
   bannerUrl   String?
-  status      ExhibitionStatus   @default(ACTIVE)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  status      ExhibitionStatus @default(ACTIVE)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   stalls   Stall[]
   bookings Booking[]
 
   @@index([status])
+  @@index([status, startDate])
   @@index([startDate])
   @@index([createdAt])
 }
@@ -105,42 +107,45 @@ model Exhibition {
 /// Represents a stall/booth in an exhibition.
 /// Stalls have a 1:1 relationship with Booking to prevent multiple active confirmed bookings.
 model Stall {
-  id               String      @id @default(cuid())
-  stallNumber      String
-  exhibitionId     String
-  exhibition       Exhibition  @relation(fields: [exhibitionId], references: [id], onDelete: Cascade)
+  id           String     @id @default(cuid())
+  stallNumber  String
+  exhibitionId String
+  exhibition   Exhibition @relation(fields: [exhibitionId], references: [id], onDelete: Cascade)
 
   // Physical dimensions
-  width            Decimal     @db.Decimal(10, 2)
-  length           Decimal     @db.Decimal(10, 2)
-  area             Decimal     @db.Decimal(10, 2)
+  width  Decimal @db.Decimal(10, 2)
+  length Decimal @db.Decimal(10, 2)
+  area   Decimal @db.Decimal(10, 2)
 
   // Pricing
-  price            Decimal     @db.Decimal(12, 2)
-  advancePercentage Int        @default(50)
-  advanceAmount    Decimal     @db.Decimal(12, 2)
+  price             Decimal @db.Decimal(12, 2)
+  advancePercentage Int     @default(50)
+  advanceAmount     Decimal @db.Decimal(12, 2)
 
   // Layout positioning (for visual floor plan)
-  positionX        Int
-  positionY        Int
+  positionX Int
+  positionY Int
 
   // Status management
-  status           StallStatus @default(AVAILABLE)
+  status       StallStatus @default(AVAILABLE)
   /// Timestamp when the stall's HELD status expires (for temporary holds during payment).
   /// Nullable: only set when status is HELD.
-  heldUntil        DateTime?
+  heldUntil    DateTime?
+  heldByUserId String?
+  heldBy       User?       @relation("HeldStalls", fields: [heldByUserId], references: [id], onDelete: SetNull)
 
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relationship: one-to-one ensures max one active booking per stall
-  booking          Booking?
+  booking Booking?
 
   @@unique([exhibitionId, stallNumber])
   @@index([exhibitionId])
   @@index([status])
   @@index([exhibitionId, status])
   @@index([heldUntil]) // For querying expired holds
+  @@index([heldByUserId])
 }
 
 // ============================================================================
@@ -152,39 +157,40 @@ model Stall {
 /// - bookingStatus: PENDING → CONFIRMED → CANCELLED
 /// - paymentStatus: PENDING → SUCCESS/FAILED/REFUNDED
 model Booking {
-  id               String        @id @default(cuid())
+  id            String @id @default(cuid())
   /// Unique, human-readable booking reference (e.g., "BK-2026-001234")
-  bookingNumber    String        @unique
-  
-  userId           String
-  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  exhibitionId     String
-  exhibition       Exhibition    @relation(fields: [exhibitionId], references: [id], onDelete: Cascade)
-  
-  stallId          String        @unique // Unique ensures one booking per stall
-  stall            Stall         @relation(fields: [stallId], references: [id], onDelete: Cascade)
+  bookingNumber String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  exhibitionId String
+  exhibition   Exhibition @relation(fields: [exhibitionId], references: [id], onDelete: Cascade)
+
+  stallId String @unique // Unique ensures one booking per stall
+  stall   Stall  @relation(fields: [stallId], references: [id], onDelete: Cascade)
 
   // Monetary amounts (stored as precise decimals)
-  totalAmount      Decimal       @db.Decimal(12, 2) // Total stall price
-  advanceAmount    Decimal       @db.Decimal(12, 2) // 50% advance paid
-  remainingAmount  Decimal       @db.Decimal(12, 2) // 50% balance due
+  totalAmount     Decimal @db.Decimal(12, 2) // Total stall price
+  advanceAmount   Decimal @db.Decimal(12, 2) // 50% advance paid
+  remainingAmount Decimal @db.Decimal(12, 2) // 50% balance due
 
   // Status tracking
-  bookingStatus    BookingStatus @default(PENDING)
-  paymentStatus    PaymentStatus @default(PENDING)
+  bookingStatus BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
 
   // Audit trail
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  payments         Payment[]
+  payments Payment[]
 
   @@index([userId])
   @@index([exhibitionId])
   @@index([stallId])
   @@index([bookingStatus])
   @@index([paymentStatus])
+  @@index([stallId, bookingStatus])
   @@index([userId, createdAt]) // For user's booking history
   @@index([exhibitionId, createdAt])
 }
@@ -192,31 +198,40 @@ model Booking {
 /// Represents a payment transaction for a booking.
 /// Records both advance and balance payments, with Razorpay integration.
 model Payment {
-  id               String        @id @default(cuid())
-  
-  bookingId        String
-  booking          Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id String @id @default(cuid())
+
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   // Amount and type
-  amount           Decimal       @db.Decimal(12, 2)
-  paymentType      PaymentType   // ADVANCE or BALANCE
+  amount      Decimal     @db.Decimal(12, 2)
+  paymentType PaymentType // ADVANCE or BALANCE
 
   // Razorpay integration
-  /// Razorpay order ID or payment ID (gateway-provided identifier)
+  /// Razorpay order identifier created before checkout.
+  razorpayOrderId             String? @unique
+  /// Razorpay payment identifier returned after checkout.
+  razorpayPaymentId           String? @unique
+  /// Gateway transaction identifier for reconciliation with external providers.
   paymentGatewayTransactionId String?
   /// Additional metadata from Razorpay (for webhooks, debugging)
   /// Stored as JSON for flexibility
-  razorpayMetadata Json?
+  razorpayMetadata            Json?
 
   // Payment status
-  paymentStatus    PaymentStatus @default(PENDING)
-  
-  // Audit trail
-  paymentDate      DateTime      @default(now())
-  createdAt        DateTime      @default(now())
+  paymentStatus PaymentStatus @default(PENDING)
 
+  // Audit trail
+  paymentDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@unique([bookingId, paymentType])
   @@index([bookingId])
+  @@index([bookingId, paymentStatus])
   @@index([paymentStatus])
   @@index([paymentDate])
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+  @@index([paymentGatewayTransactionId])
   @@index([bookingId, createdAt]) // For payment history per booking
 }

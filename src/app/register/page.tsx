@@ -39,7 +39,7 @@ export default function RegisterPage() {
       } else {
         setError(result.error || "Registration failed");
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -54,11 +54,11 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-10">
-      <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">Create Account</p>
-        <h1 className="mt-3 text-3xl font-bold">Register</h1>
-        <p className="mt-2 text-sm text-slate-600">Complete your profile and start booking exhibition stalls.</p>
+    <main className="site-shell flex min-h-screen items-center justify-center px-6 py-16">
+      <div className="w-full max-w-lg rounded-[2rem] border border-[#17211f]/10 bg-white p-8 shadow-[0_24px_80px_rgba(23,33,31,.12)] sm:p-10">
+        <p className="eyebrow text-[#c94f3d]">Join the floor</p>
+        <h1 className="display-title mt-4 text-5xl font-bold">Make an entrance.</h1>
+        <p className="mt-4 text-sm leading-6 text-[#17211f]/60">Create your profile and start finding the space where your business belongs.</p>
 
         <form onSubmit={handleSubmit} className="mt-6 grid gap-5 md:grid-cols-2">
           <div className="md:col-span-1">

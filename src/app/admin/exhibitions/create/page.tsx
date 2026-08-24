@@ -35,8 +35,8 @@ export default function CreateExhibitionPage() {
 
       router.push("/admin/exhibitions");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Failed to create exhibition");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create exhibition");
     } finally {
       setIsLoading(false);
     }
