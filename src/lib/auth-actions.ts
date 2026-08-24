@@ -7,6 +7,8 @@
 
 import { prisma } from "./prisma";
 import { hashPassword, verifyPassword, createToken, setAdminSession, clearAdminSession } from "./auth";
+import { requireAdminRole } from "./auth";
+import type { AdminRole } from "@prisma/client";
 
 export async function adminLogin(email: string, password: string): Promise<{ success: boolean; error?: string }> {
   try {
@@ -48,12 +50,21 @@ export async function adminLogout(): Promise<void> {
   }
 }
 
+export async function getAdminUsers() {
+  await requireAdminRole(["SUPER_ADMIN"]);
+  return prisma.adminUser.findMany({
+    select: { id: true, name: true, email: true, role: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
 /**
  * Create initial admin user (for setup only)
  * Remove or restrict this after initial setup
  */
-export async function createAdminUser(email: string, name: string, password: string): Promise<{ success: boolean; error?: string }> {
+export async function createAdminUser(email: string, name: string, password: string, role: AdminRole = "TEAM_MEMBER"): Promise<{ success: boolean; error?: string }> {
   try {
+    await requireAdminRole(["SUPER_ADMIN"]);
     // Validation
     if (!email?.trim()) return { success: false, error: "Email is required" };
     if (!name?.trim()) return { success: false, error: "Name is required" };
@@ -77,6 +88,7 @@ export async function createAdminUser(email: string, name: string, password: str
         email: email.toLowerCase().trim(),
         name: name.trim(),
         passwordHash,
+        role,
       },
     });
 
@@ -84,5 +96,31 @@ export async function createAdminUser(email: string, name: string, password: str
   } catch (error) {
     console.error("Error creating admin user:", error);
     return { success: false, error: "An error occurred while creating admin user" };
+  }
+}
+
+export async function updateAdminRole(adminId: string, role: AdminRole): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await requireAdminRole(["SUPER_ADMIN"]);
+    if (session.adminId === adminId && role !== "SUPER_ADMIN") {
+      return { success: false, error: "You cannot remove your own super admin access" };
+    }
+    await prisma.adminUser.update({ where: { id: adminId }, data: { role } });
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating admin role:", error);
+    return { success: false, error: "Only a super admin can update roles" };
+  }
+}
+
+export async function removeAdminUser(adminId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await requireAdminRole(["SUPER_ADMIN"]);
+    if (session.adminId === adminId) return { success: false, error: "You cannot remove your own account" };
+    await prisma.adminUser.delete({ where: { id: adminId } });
+    return { success: true };
+  } catch (error) {
+    console.error("Error removing admin user:", error);
+    return { success: false, error: "Only a super admin can remove admins" };
   }
 }

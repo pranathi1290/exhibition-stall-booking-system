@@ -6,6 +6,8 @@
 import { hash, compare } from "bcryptjs";
 import { cookies } from "next/headers";
 import { jwtVerify, SignJWT } from "jose";
+import { prisma } from "./prisma";
+import type { AdminRole } from "@prisma/client";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "admin-secret-key-change-in-production");
 const COOKIE_NAME = "admin_session";
@@ -67,7 +69,7 @@ export async function setAdminSession(token: string): Promise<void> {
 /**
  * Get admin session from cookies
  */
-export async function getAdminSession(): Promise<{ adminId: string } | null> {
+export async function getAdminSession(): Promise<{ adminId: string; role: AdminRole; name: string; email: string } | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
 
@@ -75,7 +77,16 @@ export async function getAdminSession(): Promise<{ adminId: string } | null> {
     return null;
   }
 
-  return verifyToken(token);
+  const payload = await verifyToken(token);
+  if (!payload) return null;
+
+  const admin = await prisma.adminUser.findUnique({
+    where: { id: payload.adminId },
+    select: { id: true, role: true, name: true, email: true },
+  });
+  if (!admin) return null;
+
+  return { adminId: admin.id, role: admin.role, name: admin.name, email: admin.email };
 }
 
 /**
@@ -94,6 +105,14 @@ export async function requireAdminAuth() {
   const session = await getAdminSession();
   if (!session) {
     throw new Error("Unauthorized: Admin authentication required");
+  }
+  return session;
+}
+
+export async function requireAdminRole(allowedRoles: AdminRole[]) {
+  const session = await requireAdminAuth();
+  if (!allowedRoles.includes(session.role)) {
+    throw new Error("Forbidden: insufficient admin permissions");
   }
   return session;
 }

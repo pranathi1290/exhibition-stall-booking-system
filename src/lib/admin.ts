@@ -8,7 +8,7 @@
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "./prisma";
-import { requireAdminAuth } from "./auth";
+import { requireAdminAuth, requireAdminRole } from "./auth";
 import type { Booking, Exhibition, Stall, User, ExhibitionStatus, StallStatus, PaymentType } from "@prisma/client";
 
 const exhibitionFields = {
@@ -63,7 +63,7 @@ export async function createExhibition(data: {
   bannerUrl?: string;
   status?: ExhibitionStatus;
 }): Promise<Exhibition> {
-  await requireAdminAuth();
+  await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
 
   const parsed = exhibitionSchema.extend({ status: z.enum(["DRAFT", "ACTIVE", "ENDED", "CANCELLED"]).optional() })
     .superRefine((value, context) => {
@@ -99,7 +99,7 @@ export async function updateExhibition(
     status?: ExhibitionStatus;
   }
 ): Promise<Exhibition> {
-  await requireAdminAuth();
+  await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
 
   const existing = await prisma.exhibition.findUnique({ where: { id } });
   if (!existing) throw new Error("Exhibition not found");
@@ -127,7 +127,7 @@ export async function updateExhibition(
 }
 
 export async function deleteExhibition(id: string): Promise<void> {
-  await requireAdminAuth();
+  await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
 
   const exhibition = await prisma.exhibition.findUnique({
     where: { id },
@@ -171,7 +171,7 @@ export async function createStall(data: {
   positionY: number;
   status?: StallStatus;
 }): Promise<Stall> {
-  await requireAdminAuth();
+  await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
 
   const parsed = z.object({
     exhibitionId: z.string().trim().min(1, "Exhibition is required"),
@@ -280,7 +280,7 @@ export async function updateStall(
 }
 
 export async function deleteStall(id: string): Promise<void> {
-  await requireAdminAuth();
+  await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
 
   const stall = await prisma.stall.findUnique({
     where: { id },
@@ -384,7 +384,7 @@ export async function createManualBooking(data: {
   stallId: string;
   advancePaid: boolean;
 }): Promise<Booking> {
-  await requireAdminAuth();
+  await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
 
   const parsed = z.object({
     userId: z.string().min(1),
@@ -437,7 +437,7 @@ export async function createManualBooking(data: {
 }
 
 export async function cancelAdminBooking(bookingId: string): Promise<void> {
-  await requireAdminAuth();
+  await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
   if (!z.string().min(1).safeParse(bookingId).success) throw new Error("Booking is required");
 
   await prisma.$transaction(async (tx) => {
@@ -459,7 +459,7 @@ export async function recordAdminPayment(data: {
   paymentType: PaymentType;
   transactionId?: string;
 }): Promise<void> {
-  await requireAdminAuth();
+  await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
   const parsed = z.object({
     bookingId: z.string().min(1),
     amount: z.number().finite().positive(),
@@ -497,7 +497,7 @@ export async function recordAdminPayment(data: {
 }
 
 export async function updateStallLayout(stallId: string, positionX: number, positionY: number): Promise<void> {
-  await requireAdminAuth();
+  await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
   const parsed = z.object({ stallId: z.string().min(1), positionX: z.number().int(), positionY: z.number().int() })
     .safeParse({ stallId, positionX, positionY });
   if (!parsed.success) throw new Error(validationMessage(parsed.error));

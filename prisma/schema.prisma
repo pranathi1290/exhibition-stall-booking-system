@@ -42,6 +42,12 @@ enum PaymentType {
   BALANCE
 }
 
+enum AdminRole {
+  SUPER_ADMIN
+  WORKSPACE_ADMIN
+  TEAM_MEMBER
+}
+
 // ============================================================================
 // USER MODELS
 // ============================================================================
@@ -72,6 +78,7 @@ model AdminUser {
   email        String   @unique
   name         String
   passwordHash String
+  role        AdminRole @default(TEAM_MEMBER)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

@@ -27,27 +27,27 @@ export default async function ExhibitionStallsPage({ params }: { params: Promise
   };
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="site-shell min-h-screen p-6 text-[#17211f] sm:p-10">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <header className="mb-8">
-          <Link href="/admin/exhibitions" className="text-sm text-violet-600 hover:text-violet-700 font-semibold mb-2 inline-block">
+          <Link href="/admin/exhibitions" className="eyebrow text-[#c94f3d] hover:text-[#ad4032]">
             ← Back to Exhibitions
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">{exhibition.name}</h1>
-              <p className="text-slate-600 mt-1">{exhibition.venue}</p>
+              <h1 className="display-title mt-4 text-5xl font-bold">{exhibition.name}</h1>
+              <p className="mt-2 text-[#17211f]/60">{exhibition.venue}</p>
             </div>
             <Link
               href={`/admin/exhibitions/${id}/stalls/create`}
-              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
+              className="rounded-full bg-[#c94f3d] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#ad4032]"
             >
               + Add Stall
             </Link>
             <Link
               href={`/admin/exhibitions/${id}/layout`}
-              className="rounded-lg border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-100"
+              className="rounded-full border border-[#17211f]/15 bg-white px-5 py-2.5 text-sm font-bold hover:border-[#f26b4f]"
             >
               Edit Layout
             </Link>
@@ -65,7 +65,7 @@ export default async function ExhibitionStallsPage({ params }: { params: Promise
           ].map(([label, value, color]) => {
             const colorClass = color === "green" ? "bg-green-50" : color === "yellow" ? "bg-yellow-50" : color === "red" ? "bg-red-50" : "bg-slate-50";
             return (
-              <div key={label} className={`rounded-xl border border-slate-200 ${colorClass} p-4`}>
+              <div key={label} className={`rounded-2xl border border-[#17211f]/10 ${colorClass} p-5 shadow-sm`}>
                 <p className="text-sm text-slate-600">{label}</p>
                 <p className="mt-2 text-2xl font-bold">{value}</p>
               </div>
@@ -85,7 +85,7 @@ export default async function ExhibitionStallsPage({ params }: { params: Promise
             </Link>
           </div>
         ) : (
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="overflow-hidden rounded-[1.75rem] border border-[#17211f]/10 bg-white shadow-[0_16px_50px_rgba(23,33,31,.07)]">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">

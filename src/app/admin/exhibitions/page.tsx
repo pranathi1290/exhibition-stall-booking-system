@@ -13,19 +13,19 @@ export default async function ExhibitionsPage() {
   const exhibitions = await getExhibitions();
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-6xl">
+    <main className="site-shell min-h-screen p-6 text-[#17211f] sm:p-10">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <header className="mb-8 flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <header className="mb-8 flex flex-wrap items-center justify-between gap-5 rounded-[1.75rem] bg-[#17211f] p-6 text-white shadow-2xl shadow-[#17211f]/15">
           <div>
-            <Link href="/admin" className="text-sm text-violet-600 hover:text-violet-700 font-semibold mb-2 inline-block">
+            <Link href="/admin" className="eyebrow text-[#f7b2a4] hover:text-white">
               ← Back to Dashboard
             </Link>
-            <h1 className="text-3xl font-bold">Exhibitions</h1>
+            <h1 className="display-title mt-3 text-5xl font-bold">Exhibitions</h1>
           </div>
           <Link
             href="/admin/exhibitions/create"
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
+            className="rounded-full bg-[#f26b4f] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#f26b4f]/20 hover:bg-[#ff8065]"
           >
             + Create Exhibition
           </Link>
@@ -33,11 +33,11 @@ export default async function ExhibitionsPage() {
 
         {/* Exhibitions List */}
         {exhibitions.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+          <div className="rounded-[1.75rem] border border-dashed border-[#17211f]/20 bg-white p-10 text-center shadow-sm">
             <p className="text-slate-600 mb-4">No exhibitions yet</p>
             <Link
               href="/admin/exhibitions/create"
-              className="inline-block rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
+              className="inline-block rounded-full bg-[#c94f3d] px-5 py-3 text-sm font-bold text-white hover:bg-[#ad4032]"
             >
               Create Your First Exhibition
             </Link>
@@ -45,11 +45,11 @@ export default async function ExhibitionsPage() {
         ) : (
           <div className="grid gap-4">
             {exhibitions.map((exhibition) => (
-              <div key={exhibition.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+              <div key={exhibition.id} className="rounded-[1.5rem] border border-[#17211f]/10 bg-white p-6 shadow-[0_16px_50px_rgba(23,33,31,.07)] transition hover:-translate-y-0.5 hover:shadow-xl">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h2 className="text-xl font-bold">{exhibition.name}</h2>
+                      <h2 className="text-2xl font-bold">{exhibition.name}</h2>
                       <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
                         exhibition.status === "ACTIVE" ? "bg-green-100 text-green-700" :
                         exhibition.status === "DRAFT" ? "bg-yellow-100 text-yellow-700" :

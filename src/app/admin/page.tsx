@@ -74,6 +74,14 @@ export default async function AdminPage() {
             >
               🧾 Manual Booking
             </Link>
+            {session.role === "SUPER_ADMIN" && (
+              <Link
+                href="/admin/team"
+                className="rounded-xl bg-[#b9e4d0] p-4 text-sm font-bold text-[#17211f] transition hover:-translate-y-0.5 hover:bg-[#9ed2bb]"
+              >
+                Manage team access
+              </Link>
+            )}
             <div className="rounded-xl bg-slate-50 p-4 text-sm font-medium text-slate-400">
               💳 Payments are managed per booking
             </div>
