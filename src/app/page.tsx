@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getPublicExhibitions } from "@/lib/public";
+import { getPublicExhibitions, getUserBookingHistory } from "@/lib/public";
 import { getUserSession } from "@/lib/user-auth";
 import ExhibitionImage from "@/components/ExhibitionImage";
 
@@ -9,6 +9,7 @@ const fallbackExhibitionImage =
 export default async function HomePage() {
   const exhibitions = await getPublicExhibitions();
   const session = await getUserSession();
+  const bookings = session ? await getUserBookingHistory() : [];
   const featured = exhibitions.slice(0, 3);
 
   return (
@@ -34,6 +35,21 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {session && (
+        <section className="border-b border-[#17211f]/10 bg-white px-6 py-8">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-5">
+            <div>
+              <p className="eyebrow text-[#c94f3d]">Your ExpoSpace</p>
+              <h2 className="mt-2 text-2xl font-bold">{bookings.length > 0 ? "Your latest booking is ready." : "Your booking space is ready."}</h2>
+              {bookings.length > 0 ? (
+                <p className="mt-2 text-sm text-[#17211f]/60">{bookings[0].bookingNumber} · {bookings[0].exhibition.name} · Stall {bookings[0].stall.stallNumber}</p>
+              ) : <p className="mt-2 text-sm text-[#17211f]/60">Explore an exhibition and reserve your first stall.</p>}
+            </div>
+            <Link href={bookings.length > 0 ? "/dashboard" : "/exhibitions"} className="rounded-full bg-[#17211f] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#c94f3d]">{bookings.length > 0 ? "View my bookings ↗" : "Find a stall ↗"}</Link>
+          </div>
+        </section>
+      )}
 
       <section className="px-6 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl">

@@ -1,8 +1,11 @@
-import Link from "next/link";
-import { getUserSession } from "@/lib/user-auth";
+"use client";
 
-export default async function SiteNav() {
-  const session = await getUserSession();
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+export default function SiteNav({ hasSession }: { hasSession: boolean }) {
+  const pathname = usePathname();
+  const isAdminPortal = pathname.startsWith("/admin");
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/30 bg-[#17211f]/95 px-5 py-4 text-white shadow-xl shadow-[#17211f]/10 backdrop-blur-xl">
@@ -15,11 +18,12 @@ export default async function SiteNav() {
           <Link href="/exhibitions" className="rounded-full px-4 py-2 text-white/70 transition hover:bg-white/10 hover:text-white">
             Exhibitions
           </Link>
-          {session ? (
+          {!isAdminPortal && hasSession && (
             <Link href="/dashboard" className="rounded-full bg-[#f26b4f] px-4 py-2 text-white shadow-lg shadow-[#f26b4f]/20 transition hover:bg-[#ff8065]">
               My bookings
             </Link>
-          ) : (
+          )}
+          {!isAdminPortal && (
             <>
               <Link href="/login" className="rounded-full px-4 py-2 text-white/70 transition hover:bg-white/10 hover:text-white">
                 Login

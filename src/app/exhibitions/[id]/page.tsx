@@ -90,7 +90,7 @@ export default async function ExhibitionDetailPage({
           <p className="mt-3 text-white/60">Select an available stall to see its details and begin your booking.</p>
 
           <div className="mt-8">
-            <StallMap stalls={stalls} userBookedStallId={userBookedStallId} />
+            <StallMap stalls={stalls} userBookedStallId={userBookedStallId} isAuthenticated={Boolean(session)} />
           </div>
         </div>
 

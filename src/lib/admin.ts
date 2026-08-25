@@ -155,9 +155,26 @@ export async function getStallsByExhibition(exhibitionId: string): Promise<Stall
   });
 }
 
-export async function getStallById(id: string): Promise<Stall | null> {
+export async function getStallById(id: string): Promise<(Omit<Stall, "width" | "length" | "area" | "price" | "advanceAmount"> & {
+  width: number;
+  length: number;
+  area: number;
+  price: number;
+  advanceAmount: number;
+}) | null> {
   await requireAdminAuth();
-  return prisma.stall.findUnique({ where: { id } });
+  const stall = await prisma.stall.findUnique({ where: { id } });
+  if (!stall) return null;
+
+  // Decimal fields must be serialized before crossing the client-component boundary.
+  return {
+    ...stall,
+    width: stall.width.toNumber(),
+    length: stall.length.toNumber(),
+    area: stall.area.toNumber(),
+    price: stall.price.toNumber(),
+    advanceAmount: stall.advanceAmount.toNumber(),
+  };
 }
 
 export async function createStall(data: {

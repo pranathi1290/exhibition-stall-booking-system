@@ -4,12 +4,11 @@ import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getStallById, deleteStall } from "@/lib/admin";
-import type { Stall } from "@prisma/client";
 
 export default function DeleteStallPage({ params }: { params: Promise<{ id: string; stallId: string }> }) {
   const router = useRouter();
   const { id, stallId } = use(params);
-  const [stall, setStall] = useState<Stall | null>(null);
+  const [stall, setStall] = useState<Awaited<ReturnType<typeof getStallById>>>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
