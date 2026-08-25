@@ -7,7 +7,7 @@ import { hash, compare } from "bcryptjs";
 import { cookies } from "next/headers";
 import { jwtVerify, SignJWT } from "jose";
 import { prisma } from "./prisma";
-import type { AdminRole } from "@prisma/client";
+import type { AdminRole } from "./domain-types";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "admin-secret-key-change-in-production");
 const COOKIE_NAME = "admin_session";

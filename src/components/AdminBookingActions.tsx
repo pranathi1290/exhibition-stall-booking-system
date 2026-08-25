@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cancelAdminBooking, recordAdminPayment } from "@/lib/admin";
-import type { PaymentType } from "@prisma/client";
+import type { PaymentType } from "@/lib/domain-types";
 
 type Props = {
   bookingId: string;

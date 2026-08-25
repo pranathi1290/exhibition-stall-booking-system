@@ -5,11 +5,13 @@
 
 "use server";
 
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "./prisma";
 import { requireAdminAuth, requireAdminRole } from "./auth";
-import type { Booking, Exhibition, Stall, User, ExhibitionStatus, StallStatus, PaymentType } from "@prisma/client";
+import type { ExhibitionStatus, StallStatus, PaymentType } from "./domain-types";
+
+type ExhibitionRecord = NonNullable<Awaited<ReturnType<typeof prisma.exhibition.findUnique>>>;
+type StallRecord = NonNullable<Awaited<ReturnType<typeof prisma.stall.findUnique>>>;
 
 const exhibitionFields = {
   name: z.string().trim().min(1, "Exhibition name is required"),
@@ -40,14 +42,14 @@ function validationMessage(error: z.ZodError) {
 // EXHIBITION OPERATIONS
 // ============================================================================
 
-export async function getExhibitions(): Promise<Exhibition[]> {
+export async function getExhibitions(): Promise<ExhibitionRecord[]> {
   await requireAdminAuth();
   return prisma.exhibition.findMany({
     orderBy: { createdAt: "desc" },
   });
 }
 
-export async function getExhibitionById(id: string): Promise<Exhibition | null> {
+export async function getExhibitionById(id: string): Promise<ExhibitionRecord | null> {
   await requireAdminAuth();
   return prisma.exhibition.findUnique({
     where: { id },
@@ -62,7 +64,7 @@ export async function createExhibition(data: {
   endDate: Date;
   bannerUrl?: string;
   status?: ExhibitionStatus;
-}): Promise<Exhibition> {
+}): Promise<ExhibitionRecord> {
   await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
 
   const parsed = exhibitionSchema.extend({ status: z.enum(["DRAFT", "ACTIVE", "ENDED", "CANCELLED"]).optional() })
@@ -98,7 +100,7 @@ export async function updateExhibition(
     bannerUrl?: string;
     status?: ExhibitionStatus;
   }
-): Promise<Exhibition> {
+): Promise<ExhibitionRecord> {
   await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
 
   const existing = await prisma.exhibition.findUnique({ where: { id } });
@@ -146,7 +148,7 @@ export async function deleteExhibition(id: string): Promise<void> {
 // STALL OPERATIONS
 // ============================================================================
 
-export async function getStallsByExhibition(exhibitionId: string): Promise<Stall[]> {
+export async function getStallsByExhibition(exhibitionId: string): Promise<StallRecord[]> {
   await requireAdminAuth();
 
   return prisma.stall.findMany({
@@ -155,7 +157,7 @@ export async function getStallsByExhibition(exhibitionId: string): Promise<Stall
   });
 }
 
-export async function getStallById(id: string): Promise<(Omit<Stall, "width" | "length" | "area" | "price" | "advanceAmount"> & {
+export async function getStallById(id: string): Promise<(Omit<StallRecord, "width" | "length" | "area" | "price" | "advanceAmount"> & {
   width: number;
   length: number;
   area: number;
@@ -187,7 +189,7 @@ export async function createStall(data: {
   positionX: number;
   positionY: number;
   status?: StallStatus;
-}): Promise<Stall> {
+}): Promise<StallRecord> {
   await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
 
   const parsed = z.object({
@@ -212,17 +214,17 @@ export async function createStall(data: {
   });
   if (existing) throw new Error("Stall number already exists for this exhibition");
 
-  const area = new Prisma.Decimal(parsed.data.width).times(parsed.data.length);
-  const advanceAmount = new Prisma.Decimal(parsed.data.price).times(parsed.data.advancePercentage).dividedBy(100);
+  const area = parsed.data.width * parsed.data.length;
+  const advanceAmount = (parsed.data.price * parsed.data.advancePercentage) / 100;
 
   return prisma.stall.create({
     data: {
       stallNumber: parsed.data.stallNumber,
       exhibitionId: parsed.data.exhibitionId,
-      width: new Prisma.Decimal(parsed.data.width),
-      length: new Prisma.Decimal(parsed.data.length),
+      width: parsed.data.width,
+      length: parsed.data.length,
       area,
-      price: new Prisma.Decimal(parsed.data.price),
+      price: parsed.data.price,
       advancePercentage: parsed.data.advancePercentage,
       advanceAmount,
       positionX: parsed.data.positionX,
@@ -244,7 +246,7 @@ export async function updateStall(
     positionY?: number;
     status?: StallStatus;
   }
-): Promise<Stall> {
+): Promise<StallRecord> {
   await requireAdminAuth();
 
   const existing = await prisma.stall.findUnique({ where: { id } });
@@ -268,23 +270,34 @@ export async function updateStall(
   }
 
   // Recalculate area and advance if needed
-  const updateData: Prisma.StallUpdateInput = {};
+  const updateData: {
+    stallNumber?: string;
+    area?: number;
+    advanceAmount?: number;
+    width?: number;
+    length?: number;
+    price?: number;
+    advancePercentage?: number;
+    positionX?: number;
+    positionY?: number;
+    status?: StallStatus;
+  } = {};
   if (parsed.data.stallNumber !== undefined) updateData.stallNumber = parsed.data.stallNumber;
   if (parsed.data.width !== undefined || parsed.data.length !== undefined) {
-    const width = parsed.data.width ?? existing.width;
-    const length = parsed.data.length ?? existing.length;
-    updateData.area = new Prisma.Decimal(width).times(length);
+    const width = parsed.data.width ?? Number(existing.width);
+    const length = parsed.data.length ?? Number(existing.length);
+    updateData.area = width * length;
   }
   if (parsed.data.price !== undefined || parsed.data.advancePercentage !== undefined) {
-    const price = parsed.data.price ?? existing.price;
+    const price = parsed.data.price ?? Number(existing.price);
     const advancePercentage = parsed.data.advancePercentage ?? existing.advancePercentage;
-    updateData.advanceAmount = new Prisma.Decimal(price).times(advancePercentage).dividedBy(100);
+    updateData.advanceAmount = (price * advancePercentage) / 100;
   }
 
   // Convert numbers to Decimal
-  if (parsed.data.width !== undefined) updateData.width = new Prisma.Decimal(parsed.data.width);
-  if (parsed.data.length !== undefined) updateData.length = new Prisma.Decimal(parsed.data.length);
-  if (parsed.data.price !== undefined) updateData.price = new Prisma.Decimal(parsed.data.price);
+  if (parsed.data.width !== undefined) updateData.width = parsed.data.width;
+  if (parsed.data.length !== undefined) updateData.length = parsed.data.length;
+  if (parsed.data.price !== undefined) updateData.price = parsed.data.price;
   if (parsed.data.advancePercentage !== undefined) updateData.advancePercentage = parsed.data.advancePercentage;
   if (parsed.data.positionX !== undefined) updateData.positionX = parsed.data.positionX;
   if (parsed.data.positionY !== undefined) updateData.positionY = parsed.data.positionY;
@@ -360,21 +373,7 @@ export async function getGlobalStats(): Promise<{
   };
 }
 
-type AdminBooking = Booking & {
-  user: Pick<User, "id" | "name" | "email" | "company" | "phone" | "address">;
-  exhibition: Exhibition;
-  stall: Stall;
-  payments: Array<{
-    id: string;
-    amount: Prisma.Decimal;
-    paymentType: PaymentType;
-    paymentGatewayTransactionId: string | null;
-    paymentStatus: string;
-    paymentDate: Date;
-  }>;
-};
-
-export async function getAdminBookings(): Promise<AdminBooking[]> {
+export async function getAdminBookings() {
   await requireAdminAuth();
   return prisma.booking.findMany({
     include: {
@@ -387,7 +386,7 @@ export async function getAdminBookings(): Promise<AdminBooking[]> {
   });
 }
 
-export async function getAdminUsers(): Promise<Array<Pick<User, "id" | "name" | "email" | "company">>> {
+export async function getAdminUsers() {
   await requireAdminAuth();
   return prisma.user.findMany({
     select: { id: true, name: true, email: true, company: true },
@@ -400,7 +399,7 @@ export async function createManualBooking(data: {
   exhibitionId: string;
   stallId: string;
   advancePaid: boolean;
-}): Promise<Booking> {
+}) {
   await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
 
   const parsed = z.object({
@@ -431,9 +430,9 @@ export async function createManualBooking(data: {
         stallId: stall.id,
         totalAmount: stall.price,
         advanceAmount: stall.advanceAmount,
-        remainingAmount: stall.price.minus(stall.advanceAmount),
+        remainingAmount: Number(stall.price) - Number(stall.advanceAmount),
         bookingStatus: "CONFIRMED",
-        paymentStatus: parsed.data.advancePaid && stall.price.equals(stall.advanceAmount) ? "SUCCESS" : "PENDING",
+        paymentStatus: parsed.data.advancePaid && Number(stall.price) === Number(stall.advanceAmount) ? "SUCCESS" : "PENDING",
       },
     });
 
@@ -492,10 +491,11 @@ export async function recordAdminPayment(data: {
 
     const paid = booking.payments
       .filter((payment) => payment.paymentStatus === "SUCCESS")
-      .reduce((sum, payment) => sum.plus(payment.amount), new Prisma.Decimal(0));
-    const outstanding = booking.totalAmount.minus(paid);
-    const amount = new Prisma.Decimal(parsed.data.amount);
-    if (amount.greaterThan(outstanding)) throw new Error("Payment exceeds the outstanding balance");
+      .reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const totalAmount = Number(booking.totalAmount);
+    const outstanding = totalAmount - paid;
+    const amount = parsed.data.amount;
+    if (amount > outstanding + 1e-9) throw new Error("Payment exceeds the outstanding balance");
 
     await tx.payment.create({
       data: {
@@ -507,7 +507,7 @@ export async function recordAdminPayment(data: {
         paymentDate: new Date(),
       },
     });
-    if (paid.plus(amount).greaterThanOrEqualTo(booking.totalAmount)) {
+    if (paid + amount >= totalAmount - 1e-9) {
       await tx.booking.update({ where: { id: booking.id }, data: { paymentStatus: "SUCCESS" } });
     }
   });

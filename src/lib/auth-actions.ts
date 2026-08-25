@@ -8,7 +8,7 @@
 import { prisma } from "./prisma";
 import { hashPassword, verifyPassword, createToken, setAdminSession, clearAdminSession } from "./auth";
 import { requireAdminRole } from "./auth";
-import type { AdminRole } from "@prisma/client";
+import type { AdminRole } from "./domain-types";
 
 export async function adminLogin(email: string, password: string): Promise<{ success: boolean; error?: string }> {
   try {

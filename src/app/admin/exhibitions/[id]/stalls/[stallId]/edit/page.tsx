@@ -4,7 +4,7 @@ import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getStallById, updateStall } from "@/lib/admin";
-import type { StallStatus } from "@prisma/client";
+import type { StallStatus } from "@/lib/domain-types";
 
 export default function EditStallPage({ params }: { params: Promise<{ id: string; stallId: string }> }) {
   const router = useRouter();

@@ -4,12 +4,11 @@ import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getExhibitionById, deleteExhibition } from "@/lib/admin";
-import type { Exhibition } from "@prisma/client";
 
 export default function DeleteExhibitionPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
-  const [exhibition, setExhibition] = useState<Exhibition | null>(null);
+  const [exhibition, setExhibition] = useState<Awaited<ReturnType<typeof getExhibitionById>>>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 

@@ -1,4 +1,4 @@
-import type { StallStatus } from "@prisma/client";
+import type { StallStatus } from "./domain-types";
 
 export const HOLD_DURATION_MINUTES = 10;
 

@@ -4,7 +4,7 @@ import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getExhibitionById, updateExhibition } from "@/lib/admin";
-import type { ExhibitionStatus } from "@prisma/client";
+import type { ExhibitionStatus } from "@/lib/domain-types";
 
 export default function EditExhibitionPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();

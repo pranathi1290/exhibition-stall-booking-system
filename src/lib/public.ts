@@ -8,20 +8,31 @@
 import { prisma } from "./prisma";
 import { requireUserAuth } from "./user-auth";
 import { getHoldConflictMessage, HOLD_DURATION_MINUTES, isHoldExpired } from "./booking-workflow";
-import type { Exhibition, Stall, Booking, Prisma } from "@prisma/client";
+
+type ExhibitionRecord = NonNullable<Awaited<ReturnType<typeof prisma.exhibition.findFirst>>>;
+type StallRecord = NonNullable<Awaited<ReturnType<typeof prisma.stall.findFirst>>>;
+type UserProfile = {
+  id: string;
+  email: string;
+  name: string;
+  company: string | null;
+  phone: string | null;
+  address: string | null;
+  createdAt: Date;
+};
 
 // ============================================================================
 // PUBLIC QUERIES (no auth needed)
 // ============================================================================
 
-export async function getPublicExhibitions(): Promise<Exhibition[]> {
+export async function getPublicExhibitions(): Promise<ExhibitionRecord[]> {
   return prisma.exhibition.findMany({
     where: { status: "ACTIVE" },
     orderBy: { startDate: "asc" },
   });
 }
 
-export async function getPublicExhibitionById(id: string): Promise<Exhibition | null> {
+export async function getPublicExhibitionById(id: string): Promise<ExhibitionRecord | null> {
   return prisma.exhibition.findFirst({
     where: {
       id,
@@ -30,7 +41,7 @@ export async function getPublicExhibitionById(id: string): Promise<Exhibition | 
   });
 }
 
-export async function getPublicStallsByExhibition(exhibitionId: string): Promise<Stall[]> {
+export async function getPublicStallsByExhibition(exhibitionId: string): Promise<StallRecord[]> {
   await prisma.stall.updateMany({
     where: {
       exhibitionId,
@@ -45,7 +56,7 @@ export async function getPublicStallsByExhibition(exhibitionId: string): Promise
   });
 }
 
-export async function getPublicStallById(id: string): Promise<Stall | null> {
+export async function getPublicStallById(id: string): Promise<StallRecord | null> {
   return prisma.stall.findFirst({
     where: {
       id,
@@ -58,15 +69,7 @@ export async function getPublicStallById(id: string): Promise<Stall | null> {
 // USER QUERIES (requires auth)
 // ============================================================================
 
-export async function getUserProfile(): Promise<Prisma.UserGetPayload<{ select: {
-  id: true;
-  email: true;
-  name: true;
-  company: true;
-  phone: true;
-  address: true;
-  createdAt: true;
-} }> | null> {
+export async function getUserProfile(): Promise<UserProfile | null> {
   const session = await requireUserAuth();
 
   return prisma.user.findUnique({
@@ -83,7 +86,7 @@ export async function getUserProfile(): Promise<Prisma.UserGetPayload<{ select: 
   });
 }
 
-export async function getUserBookingHistory(): Promise<(Booking & { exhibition: Exhibition; stall: Stall })[]> {
+export async function getUserBookingHistory() {
   const session = await requireUserAuth();
 
   return prisma.booking.findMany({
@@ -96,13 +99,7 @@ export async function getUserBookingHistory(): Promise<(Booking & { exhibition: 
   });
 }
 
-export async function getUserBookingById(bookingId: string): Promise<Prisma.BookingGetPayload<{
-  include: {
-    exhibition: true;
-    stall: true;
-    payments: true;
-  };
-}> | null> {
+export async function getUserBookingById(bookingId: string) {
   const session = await requireUserAuth();
 
   return prisma.booking.findFirst({

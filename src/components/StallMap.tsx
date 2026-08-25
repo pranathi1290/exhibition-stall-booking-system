@@ -3,8 +3,18 @@
  * Displays stalls in a grid with color-coded status visualization
  */
 
-import type { Stall } from "@prisma/client";
+import type { StallStatus } from "@/lib/domain-types";
 import Link from "next/link";
+
+type Stall = {
+  id: string;
+  stallNumber: string;
+  width: unknown;
+  length: unknown;
+  positionX: number;
+  positionY: number;
+  status: StallStatus;
+};
 
 interface StallMapProps {
   stalls: Stall[];

@@ -2,7 +2,6 @@
 
 import Razorpay from "razorpay";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { requireUserAuth } from "./user-auth";
 import { isHoldExpired } from "./booking-workflow";
@@ -19,10 +18,11 @@ function getRazorpay() {
   return new Razorpay({ key_id: razorpayKeyId, key_secret: razorpayKeySecret });
 }
 
-function toPaise(amount: Prisma.Decimal) {
-  const paise = amount.mul(100);
-  if (!paise.isInteger() || paise.lessThanOrEqualTo(0)) throw new Error("Invalid payment amount");
-  return paise.toNumber();
+function toPaise(amount: number | { toNumber: () => number }) {
+  const numericAmount = typeof amount === "number" ? amount : amount.toNumber();
+  const paise = Math.round(numericAmount * 100);
+  if (paise <= 0) throw new Error("Invalid payment amount");
+  return paise;
 }
 
 export async function startRazorpayCheckout(exhibitionId: string, stallId: string) {
