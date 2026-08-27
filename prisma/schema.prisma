@@ -98,6 +98,7 @@ model Exhibition {
   startDate   DateTime
   endDate     DateTime
   bannerUrl   String?
+  locationUrl String?
   status      ExhibitionStatus @default(ACTIVE)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt

@@ -20,6 +20,7 @@ const exhibitionFields = {
   startDate: z.date().refine((date) => !Number.isNaN(date.getTime()), "Invalid start date"),
   endDate: z.date().refine((date) => !Number.isNaN(date.getTime()), "Invalid end date"),
   bannerUrl: z.string().trim().url("Banner URL must be valid").optional(),
+  locationUrl: z.string().trim().url("Location link must be valid").optional(),
 };
 
 const stallFields = {
@@ -63,6 +64,7 @@ export async function createExhibition(data: {
   startDate: Date;
   endDate: Date;
   bannerUrl?: string;
+  locationUrl?: string;
   status?: ExhibitionStatus;
 }): Promise<ExhibitionRecord> {
   await requireAdminRole(["SUPER_ADMIN", "WORKSPACE_ADMIN"]);
@@ -84,6 +86,7 @@ export async function createExhibition(data: {
       startDate: parsed.data.startDate,
       endDate: parsed.data.endDate,
       bannerUrl: parsed.data.bannerUrl || null,
+      locationUrl: parsed.data.locationUrl || null,
       status: parsed.data.status || "ACTIVE",
     },
   });
@@ -98,6 +101,7 @@ export async function updateExhibition(
     startDate?: Date;
     endDate?: Date;
     bannerUrl?: string;
+    locationUrl?: string;
     status?: ExhibitionStatus;
   }
 ): Promise<ExhibitionRecord> {
@@ -123,6 +127,7 @@ export async function updateExhibition(
       startDate: parsed.data.startDate,
       endDate: parsed.data.endDate,
       bannerUrl: parsed.data.bannerUrl || null,
+      locationUrl: parsed.data.locationUrl || null,
       status: parsed.data.status,
     },
   });

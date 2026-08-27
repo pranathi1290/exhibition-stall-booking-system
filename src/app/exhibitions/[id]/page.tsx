@@ -61,6 +61,7 @@ export default async function ExhibitionDetailPage({
             <div className="rounded-2xl bg-[#eaf3ff] p-5">
               <p className="text-xs text-slate-600 uppercase tracking-wide">Venue</p>
               <p className="mt-2 font-semibold">{exhibition.venue}</p>
+              {exhibition.locationUrl && <a href={exhibition.locationUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-bold text-[#0867d9] hover:text-[#0a2348]">Open location ↗</a>}
             </div>
             <div className="rounded-2xl bg-[#f5f9ff] p-5">
               <p className="text-xs text-slate-600 uppercase tracking-wide">Dates</p>

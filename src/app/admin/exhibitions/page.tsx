@@ -61,6 +61,7 @@ export default async function ExhibitionsPage() {
                     <p className="text-sm text-slate-600 mb-2">{exhibition.description}</p>
                     <div className="flex gap-6 text-sm text-slate-500">
                       <span>📍 {exhibition.venue}</span>
+                      {exhibition.locationUrl && <a href={exhibition.locationUrl} target="_blank" rel="noreferrer" className="font-semibold text-[#0867d9] hover:text-[#0a2348]">Location ↗</a>}
                       <span>📅 {new Date(exhibition.startDate).toLocaleDateString()} - {new Date(exhibition.endDate).toLocaleDateString()}</span>
                     </div>
                   </div>

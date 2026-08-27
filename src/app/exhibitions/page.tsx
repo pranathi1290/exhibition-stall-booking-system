@@ -45,7 +45,7 @@ export default async function ExhibitionsPage() {
                   </p>
                   <h3 className="mt-3 text-2xl font-bold text-[#17211f]">{exhibition.name}</h3>
                   <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#17211f]/65">{exhibition.description}</p>
-                  <p className="mt-5 text-sm font-bold text-[#0a2348]/75">{exhibition.venue}<span className="float-right text-[#0867d9] transition group-hover:translate-x-1">Explore ↗</span></p>
+                  <p className="mt-5 flex items-center justify-between gap-3 text-sm font-bold text-[#0a2348]/75"><span>{exhibition.venue}</span>{exhibition.locationUrl ? <a href={exhibition.locationUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="shrink-0 text-[#0867d9] hover:text-[#0a2348]">Location ↗</a> : <span className="shrink-0 text-[#0867d9] transition group-hover:translate-x-1">Explore ↗</span>}</p>
                 </div>
               </Link>
             ))}

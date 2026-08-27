@@ -38,6 +38,7 @@ export default async function ExhibitionStallsPage({ params }: { params: Promise
             <div>
               <h1 className="display-title mt-4 text-5xl font-bold">{exhibition.name}</h1>
               <p className="mt-2 text-[#17211f]/60">{exhibition.venue}</p>
+              {exhibition.locationUrl && <a href={exhibition.locationUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-semibold text-[#0867d9] hover:text-[#0a2348]">Open location ↗</a>}
             </div>
             <Link
               href={`/admin/exhibitions/${id}/stalls/create`}
