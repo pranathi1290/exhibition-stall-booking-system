@@ -55,7 +55,7 @@ export default function RegisterPage() {
 
   return (
     <main className="site-shell flex min-h-screen items-center justify-center px-6 py-16">
-      <div className="w-full max-w-lg rounded-[2rem] border border-[#17211f]/10 bg-white p-8 shadow-[0_24px_80px_rgba(23,33,31,.12)] sm:p-10">
+      <div className="w-full max-w-lg rounded-[2rem] border border-[#0a2348]/10 bg-white p-8 shadow-[0_24px_80px_rgba(10,35,72,.12)] sm:p-10">
         <p className="eyebrow text-[#c94f3d]">Join the floor</p>
         <h1 className="display-title mt-4 text-5xl font-bold">Make an entrance.</h1>
         <p className="mt-4 text-sm leading-6 text-[#17211f]/60">Create your profile and start finding the space where your business belongs.</p>

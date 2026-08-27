@@ -22,19 +22,14 @@ interface StallMapProps {
   isAuthenticated?: boolean;
 }
 
-export default function StallMap({ stalls, userBookedStallId, isAuthenticated }: StallMapProps) {
-  // Group stalls by row (sort by positionY first, then positionX)
-  const sortedStalls = [...stalls].sort((a, b) => {
-    if (a.positionY !== b.positionY) return a.positionY - b.positionY;
-    if (a.positionX !== b.positionX) return a.positionX - b.positionX;
-    return a.stallNumber.localeCompare(b.stallNumber);
-  });
+export default function StallMap({ stalls, userBookedStallId, isAuthenticated = false }: StallMapProps) {
+  const sortedStalls = [...stalls].sort((a, b) =>
+    a.stallNumber.localeCompare(b.stallNumber, undefined, { numeric: true, sensitivity: "base" })
+  );
 
-  // Calculate grid dimensions, wide enough to fit every stall even after collision reflow
-  const maxX = Math.max(...sortedStalls.map((s) => s.positionX), 0);
-  const maxY = Math.max(...sortedStalls.map((s) => s.positionY), 0);
-  const cols = Math.max(maxX + 1, 1);
-  const rows = Math.max(maxY + 1, Math.ceil(sortedStalls.length / cols), 1);
+  // Keep the floor plan easy to scan: four stalls per row, left to right.
+  const cols = 4;
+  const rows = Math.max(Math.ceil(sortedStalls.length / cols), 1);
 
   // Get color for status
   const getStatusColor = (status: string) => {
@@ -87,24 +82,10 @@ export default function StallMap({ stalls, userBookedStallId, isAuthenticated }:
     .fill(null)
     .map(() => Array(cols).fill(null));
 
-  // Every stall must render, even when saved positions collide (e.g. default 0,0)
-  sortedStalls.forEach((stall) => {
-    let targetY = stall.positionY;
-    let targetX = stall.positionX;
-
-    if (!grid[targetY] || grid[targetY][targetX]) {
-      const nextFree = grid.flatMap((row, y) => row.map((cell, x) => ({ y, x, cell }))).find(({ cell }) => !cell);
-      if (nextFree) {
-        targetY = nextFree.y;
-        targetX = nextFree.x;
-      } else {
-        grid.push(Array(cols).fill(null));
-        targetY = grid.length - 1;
-        targetX = 0;
-      }
-    }
-
-    grid[targetY][targetX] = stall;
+  sortedStalls.forEach((stall, index) => {
+    const row = Math.floor(index / cols);
+    const column = index % cols;
+    grid[row][column] = stall;
   });
 
   return (
@@ -155,7 +136,8 @@ export default function StallMap({ stalls, userBookedStallId, isAuthenticated }:
                       {stall.status === "AVAILABLE" ? (
                         <Link
                           href={isAuthenticated ? `/book/${stall.id}` : `/login?redirect=${encodeURIComponent(`/book/${stall.id}`)}`}
-                          className="mt-1 inline-block rounded-lg bg-green-600 px-2 py-1 text-xs font-semibold text-white hover:bg-green-700"
+                          aria-label={isAuthenticated ? `Book stall ${stall.stallNumber}` : `Login to book stall ${stall.stallNumber}`}
+                          className="mt-1 inline-block rounded-lg bg-[#0867d9] px-2 py-1 text-xs font-semibold text-white hover:bg-[#0a2348]"
                         >
                           {isAuthenticated ? "Book" : "Login to book"}
                         </Link>

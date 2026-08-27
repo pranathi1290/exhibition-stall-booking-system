@@ -1,15 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f3ee;
-  --foreground: #191b1a;
-  --ink: #191b1a;
-  --paper: #f4f3ee;
-  --coral: #d65c45;
-  --coral-deep: #a94035;
-  --mint: #c7d7c9;
-  --brass: #c6a15b;
-  --line: rgba(25, 27, 26, 0.14);
+  --background: #ffffff;
+  --foreground: #0a2348;
+  --ink: #0a2348;
+  --paper: #ffffff;
+  --navy: #0a2348;
+  --blue: #0867d9;
+  --blue-soft: #eaf3ff;
+  --line: rgba(10, 35, 72, 0.14);
 }
 
 @theme inline {
@@ -33,7 +32,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
-  background-image: linear-gradient(rgba(25, 27, 26, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(25, 27, 26, 0.035) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(10, 35, 72, 0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(10, 35, 72, 0.025) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -47,15 +46,15 @@ img {
 }
 
 ::selection {
-  background: var(--coral);
+  background: var(--blue);
   color: white;
 }
 
 .display-title {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 500;
-  letter-spacing: -0.045em;
-  line-height: 0.96;
+  font-family: var(--font-geist-sans), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
 }
 
 .eyebrow {
@@ -76,12 +75,51 @@ img {
   z-index: -1;
   pointer-events: none;
   content: "";
-  background: linear-gradient(115deg, transparent 0 42%, rgba(214, 92, 69, 0.07) 42% 42.2%, transparent 42.2% 100%);
+  background: linear-gradient(135deg, transparent 0 47%, rgba(8, 103, 217, 0.05) 47% 47.15%, transparent 47.15% 100%);
 }
 
 .display-title em {
-  color: var(--coral);
+  color: var(--blue);
   font-style: normal;
+}
+
+.brand-mark__arc,
+.brand-mark__aisle {
+  position: absolute;
+  display: block;
+  transition: transform 250ms ease;
+}
+
+.brand-mark__arc {
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.brand-mark__arc--left {
+  transform: translate(-4px, -3px) rotate(45deg);
+  border-radius: 2px 50% 2px 2px;
+}
+
+.brand-mark__arc--right {
+  transform: translate(4px, 3px) rotate(45deg);
+  border-radius: 2px 50% 2px 2px;
+}
+
+.brand-mark__aisle {
+  width: 1px;
+  height: 22px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+.group:hover .brand-mark__arc--left {
+  transform: translate(-5px, -4px) rotate(45deg);
+}
+
+.group:hover .brand-mark__arc--right {
+  transform: translate(5px, 4px) rotate(45deg);
 }
 
 @media (prefers-reduced-motion: reduce) {

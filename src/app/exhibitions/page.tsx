@@ -23,16 +23,16 @@ export default async function ExhibitionsPage() {
                 href={`/exhibitions/${exhibition.id}`}
                 className={`group overflow-hidden rounded-[1.75rem] border border-[#17211f]/10 bg-white shadow-[0_16px_50px_rgba(23,33,31,.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(23,33,31,.15)] ${index === 0 ? "md:col-span-2" : ""}`}
               >
-                <div className={`relative overflow-hidden bg-[#d7e7dc] ${index === 0 ? "h-64" : "h-48"}`}>
+                <div className="relative aspect-[16/7] overflow-hidden bg-[#eaf3ff]">
                   <ExhibitionImage
                     src={exhibition.bannerUrl || fallbackExhibitionImage}
                     alt={exhibition.name}
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                   />
-                  <span className="absolute left-5 top-5 rounded-full bg-[#f5f1ea]/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#17211f]">{String(index + 1).padStart(2, "0")} / {String(exhibitions.length).padStart(2, "0")}</span>
+                  <span className="absolute left-5 top-5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#0a2348]">{String(index + 1).padStart(2, "0")} / {String(exhibitions.length).padStart(2, "0")}</span>
                 </div>
                 <div className="p-6 sm:p-7">
-                  <p className="eyebrow text-[#c94f3d]">
+                  <p className="eyebrow text-[#0867d9]">
                     {new Date(exhibition.startDate).toLocaleDateString("en-IN", {
                       month: "short",
                       day: "numeric",
@@ -45,7 +45,7 @@ export default async function ExhibitionsPage() {
                   </p>
                   <h3 className="mt-3 text-2xl font-bold text-[#17211f]">{exhibition.name}</h3>
                   <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#17211f]/65">{exhibition.description}</p>
-                  <p className="mt-5 text-sm font-bold text-[#17211f]/75">{exhibition.venue}<span className="float-right text-[#c94f3d] transition group-hover:translate-x-1">Explore ↗</span></p>
+                  <p className="mt-5 text-sm font-bold text-[#0a2348]/75">{exhibition.venue}<span className="float-right text-[#0867d9] transition group-hover:translate-x-1">Explore ↗</span></p>
                 </div>
               </Link>
             ))}

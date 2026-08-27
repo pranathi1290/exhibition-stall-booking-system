@@ -27,11 +27,11 @@ export default async function ExhibitionStallsPage({ params }: { params: Promise
   };
 
   return (
-    <main className="site-shell min-h-screen p-6 text-[#17211f] sm:p-10">
+    <main className="site-shell min-h-screen p-6 text-[#0a2348] sm:p-10">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <header className="mb-8">
-          <Link href="/admin/exhibitions" className="eyebrow text-[#c94f3d] hover:text-[#ad4032]">
+          <Link href="/admin/exhibitions" className="eyebrow text-[#0867d9] hover:text-[#0a2348]">
             ← Back to Exhibitions
           </Link>
           <div className="flex items-center justify-between">
@@ -41,7 +41,7 @@ export default async function ExhibitionStallsPage({ params }: { params: Promise
             </div>
             <Link
               href={`/admin/exhibitions/${id}/stalls/create`}
-              className="rounded-full bg-[#c94f3d] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#ad4032]"
+              className="rounded-full bg-[#0867d9] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2d83ed]"
             >
               + Add Stall
             </Link>
@@ -79,7 +79,7 @@ export default async function ExhibitionStallsPage({ params }: { params: Promise
             <p className="text-slate-600 mb-4">No stalls yet</p>
             <Link
               href={`/admin/exhibitions/${id}/stalls/create`}
-              className="inline-block rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
+              className="inline-block rounded-lg bg-[#0867d9] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d83ed]"
             >
               Create Your First Stall
             </Link>
@@ -118,7 +118,7 @@ export default async function ExhibitionStallsPage({ params }: { params: Promise
                         <div className="flex gap-2">
                           <Link
                             href={`/admin/exhibitions/${id}/stalls/${stall.id}/edit`}
-                            className="text-sm font-medium text-violet-600 hover:text-violet-700"
+                            className="text-sm font-medium text-[#0867d9] hover:text-[#0a2348]"
                           >
                             Edit
                           </Link>

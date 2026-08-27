@@ -9,28 +9,27 @@ export default function SiteNav({ hasSession }: { hasSession: boolean }) {
   const isAdminPortal = pathname.startsWith("/admin");
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#191b1a]/95 px-5 py-4 text-white shadow-2xl shadow-[#191b1a]/20 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-[#0a2348]/10 bg-white/95 px-5 py-4 text-[#0a2348] shadow-sm backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
         <BrandLogo />
         <div className="flex flex-wrap items-center gap-1 text-xs font-bold uppercase tracking-[0.12em]">
-          <Link href="/exhibitions" className="rounded-sm px-4 py-2 text-white/60 transition hover:bg-white/10 hover:text-white">
+            <Link href="/exhibitions" className="rounded-sm px-4 py-2 text-[#0a2348]/65 transition hover:bg-[#eaf3ff] hover:text-[#0867d9]">
             Exhibitions
           </Link>
-          {!isAdminPortal && hasSession && (
-            <Link href="/dashboard" className="rounded-sm bg-[#d65c45] px-4 py-2 text-white shadow-lg shadow-[#d65c45]/20 transition hover:bg-[#e27660]">
+          {!isAdminPortal && (hasSession ? (
+            <Link href="/dashboard" className="rounded-sm bg-[#0867d9] px-4 py-2 text-white shadow-lg shadow-[#0867d9]/20 transition hover:bg-[#0a2348]">
               My bookings
             </Link>
-          )}
-          {!isAdminPortal && (
+          ) : (
             <>
-              <Link href="/login" className="rounded-sm px-4 py-2 text-white/60 transition hover:bg-white/10 hover:text-white">
+              <Link href="/login" className="rounded-sm px-4 py-2 text-[#0a2348]/65 transition hover:bg-[#eaf3ff] hover:text-[#0867d9]">
                 Login
               </Link>
-              <Link href="/register" className="rounded-sm bg-[#d65c45] px-4 py-2 text-white shadow-lg shadow-[#d65c45]/20 transition hover:bg-[#e27660]">
+              <Link href="/register" className="rounded-sm bg-[#0867d9] px-4 py-2 text-white shadow-lg shadow-[#0867d9]/20 transition hover:bg-[#0a2348]">
                 Register
               </Link>
             </>
-          )}
+          ))}
         </div>
       </nav>
     </header>

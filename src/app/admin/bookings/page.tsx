@@ -18,24 +18,24 @@ export default async function AdminBookingsPage() {
     .reduce((sum, payment) => sum + Number(payment.amount), 0);
 
   return (
-    <main className="site-shell min-h-screen p-6 text-[#17211f] sm:p-10">
+    <main className="site-shell min-h-screen p-6 text-[#0a2348] sm:p-10">
       <div className="mx-auto max-w-7xl">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <Link href="/admin" className="eyebrow text-[#c94f3d]">Back to dashboard</Link>
+            <Link href="/admin" className="eyebrow text-[#0867d9]">Back to dashboard</Link>
             <h1 className="display-title mt-4 text-5xl font-bold">Booking management</h1>
-            <p className="mt-3 text-[#17211f]/60">Review customers, payment status, and stall reservations.</p>
+            <p className="mt-3 text-[#0a2348]/60">Review customers, payment status, and stall reservations.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <a href="/admin/bookings/export" download className="rounded-full border border-[#17211f]/15 bg-white px-5 py-2.5 font-bold hover:border-[#f26b4f]">Export CSV</a>
-            <Link href="/admin/bookings/create" className="rounded-full bg-[#c94f3d] px-5 py-2.5 font-bold text-white hover:bg-[#ad4032]">Manual booking</Link>
+            <a href="/admin/bookings/export" download className="rounded-full border border-[#0a2348]/15 bg-white px-5 py-2.5 font-bold hover:border-[#0867d9]">Export CSV</a>
+            <Link href="/admin/bookings/create" className="rounded-full bg-[#0867d9] px-5 py-2.5 font-bold text-white hover:bg-[#2d83ed]">Manual booking</Link>
           </div>
         </header>
 
         <section className="grid gap-4 sm:grid-cols-4">
           {[["Confirmed", confirmed], ["Pending", pending], ["Cancelled", cancelled], ["Collected", `₹${revenue.toFixed(2)}`]].map(([label, value]) => (
-            <div key={label} className="rounded-[1.5rem] border border-[#17211f]/10 bg-white p-6 shadow-[0_16px_50px_rgba(23,33,31,.07)]">
-              <p className="eyebrow text-[#17211f]/50">{label}</p>
+            <div key={label} className="rounded-[1.5rem] border border-[#0a2348]/10 bg-white p-6 shadow-[0_16px_50px_rgba(10,35,72,.07)]">
+              <p className="eyebrow text-[#0a2348]/50">{label}</p>
               <p className="mt-2 text-2xl font-bold">{value}</p>
             </div>
           ))}
@@ -43,12 +43,12 @@ export default async function AdminBookingsPage() {
 
         <section className="mt-8 space-y-4">
           {bookings.length === 0 ? (
-            <div className="rounded-[1.75rem] border border-dashed border-[#17211f]/20 bg-white p-12 text-center text-[#17211f]/60">No bookings yet.</div>
+            <div className="rounded-[1.75rem] border border-dashed border-[#0a2348]/20 bg-white p-12 text-center text-[#0a2348]/60">No bookings yet.</div>
           ) : bookings.map((booking) => {
             const paid = booking.payments.filter((payment) => payment.paymentStatus === "SUCCESS").reduce((sum, payment) => sum + Number(payment.amount), 0);
             const outstanding = Math.max(0, Number(booking.totalAmount) - paid);
             return (
-              <article key={booking.id} className="rounded-[1.75rem] border border-[#17211f]/10 bg-white p-6 shadow-[0_16px_50px_rgba(23,33,31,.07)]">
+              <article key={booking.id} className="rounded-[1.75rem] border border-[#0a2348]/10 bg-white p-6 shadow-[0_16px_50px_rgba(10,35,72,.07)]">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <div className="flex flex-wrap items-center gap-3">

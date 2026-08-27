@@ -13,19 +13,19 @@ export default async function ExhibitionsPage() {
   const exhibitions = await getExhibitions();
 
   return (
-    <main className="site-shell min-h-screen p-6 text-[#17211f] sm:p-10">
+    <main className="site-shell min-h-screen p-6 text-[#0a2348] sm:p-10">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <header className="mb-8 flex flex-wrap items-center justify-between gap-5 rounded-[1.75rem] bg-[#17211f] p-6 text-white shadow-2xl shadow-[#17211f]/15">
+        <header className="mb-8 flex flex-wrap items-center justify-between gap-5 rounded-[1.75rem] bg-[#0a2348] p-6 text-white shadow-2xl shadow-[#0a2348]/15">
           <div>
-            <Link href="/admin" className="eyebrow text-[#f7b2a4] hover:text-white">
+            <Link href="/admin" className="eyebrow text-[#76aef2] hover:text-white">
               ← Back to Dashboard
             </Link>
             <h1 className="display-title mt-3 text-5xl font-bold">Exhibitions</h1>
           </div>
           <Link
             href="/admin/exhibitions/create"
-            className="rounded-full bg-[#f26b4f] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#f26b4f]/20 hover:bg-[#ff8065]"
+            className="rounded-full bg-[#0867d9] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#0867d9]/20 hover:bg-[#2d83ed]"
           >
             + Create Exhibition
           </Link>
@@ -33,11 +33,11 @@ export default async function ExhibitionsPage() {
 
         {/* Exhibitions List */}
         {exhibitions.length === 0 ? (
-          <div className="rounded-[1.75rem] border border-dashed border-[#17211f]/20 bg-white p-10 text-center shadow-sm">
+          <div className="rounded-[1.75rem] border border-dashed border-[#0a2348]/20 bg-white p-10 text-center shadow-sm">
             <p className="text-slate-600 mb-4">No exhibitions yet</p>
             <Link
               href="/admin/exhibitions/create"
-              className="inline-block rounded-full bg-[#c94f3d] px-5 py-3 text-sm font-bold text-white hover:bg-[#ad4032]"
+              className="inline-block rounded-full bg-[#0867d9] px-5 py-3 text-sm font-bold text-white hover:bg-[#2d83ed]"
             >
               Create Your First Exhibition
             </Link>
