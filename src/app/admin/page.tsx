@@ -18,7 +18,7 @@ export default async function AdminPage() {
       <div className="mx-auto max-w-7xl">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-5 rounded-[1.75rem] bg-[#17211f] p-6 text-white shadow-2xl shadow-[#17211f]/20">
           <div>
-            <p className="eyebrow text-[#f7b2a4]">ExpoSpace control room</p>
+            <p className="eyebrow text-[#f7b2a4]">Arc &amp; Aisle control room</p>
             <h1 className="display-title mt-3 text-5xl font-bold">Dashboard</h1>
           </div>
           <div className="flex gap-3">

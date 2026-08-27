@@ -35,7 +35,7 @@ export default function AdminLoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#17211f] px-6 py-16">
       <div className="w-full max-w-md rounded-[2rem] border border-white/15 bg-white p-8 shadow-2xl sm:p-10">
-        <p className="eyebrow text-[#c94f3d]">ExpoSpace control room</p>
+        <p className="eyebrow text-[#c94f3d]">Arc &amp; Aisle control room</p>
         <h1 className="display-title mt-4 text-5xl font-bold">Run the room.</h1>
         <p className="mt-4 text-sm leading-6 text-[#17211f]/60">Sign in to manage exhibitions, stalls, bookings, and the details behind every event.</p>
 

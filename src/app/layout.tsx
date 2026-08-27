@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Exhibition Stall Booking System",
+  title: "Arc & Aisle | Exhibition Spaces",
   description: "Public and admin portal for managing exhibition stalls and bookings.",
 };
 

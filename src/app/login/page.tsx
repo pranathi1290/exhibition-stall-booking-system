@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <main className="site-shell flex min-h-screen items-center justify-center px-6 py-16">
       <div className="w-full max-w-md rounded-[2rem] border border-[#17211f]/10 bg-white p-8 shadow-[0_24px_80px_rgba(23,33,31,.12)] sm:p-10">
-        <p className="eyebrow text-[#c94f3d]">Your ExpoSpace account</p>
+        <p className="eyebrow text-[#c94f3d]">Your Arc &amp; Aisle account</p>
         <h1 className="display-title mt-4 text-5xl font-bold">Welcome back.</h1>
         <p className="mt-4 text-sm leading-6 text-[#17211f]/60">Sign in to manage your reservations and keep your event plans moving.</p>
 
