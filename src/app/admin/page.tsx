@@ -49,49 +49,9 @@ export default async function AdminPage() {
           ))}
         </section>
 
-        {/* Quick Actions */}
-        <section className="mt-8 rounded-[1.75rem] border border-[#0a2348]/10 bg-white p-7 shadow-[0_16px_50px_rgba(10,35,72,.07)]">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Management</h2>
-            <span className="rounded-full bg-[#eaf3ff] px-3 py-1 text-xs font-bold text-[#0a2348]">Live</span>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            <Link
-              href="/admin/exhibitions"
-              className="rounded-xl bg-[#eaf3ff] p-4 text-sm font-medium text-[#0a2348] transition hover:bg-[#d8eaff] hover:text-[#0867d9]"
-            >
-              📋 Manage Exhibitions
-            </Link>
-            <Link
-              href="/admin/bookings"
-              className="rounded-xl bg-[#eaf3ff] p-4 text-sm font-medium text-[#0a2348] transition hover:bg-[#d8eaff] hover:text-[#0867d9]"
-            >
-              📊 Manage Bookings
-            </Link>
-            <Link
-              href="/admin/bookings/create"
-              className="rounded-xl bg-[#eaf3ff] p-4 text-sm font-medium text-[#0a2348] transition hover:bg-[#d8eaff] hover:text-[#0867d9]"
-            >
-              🧾 Manual Booking
-            </Link>
-            {session.role === "SUPER_ADMIN" && (
-              <Link
-                href="/admin/team"
-                className="rounded-xl bg-[#0867d9] p-4 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#2d83ed]"
-              >
-                Manage team access
-              </Link>
-            )}
-            <div className="rounded-xl bg-slate-50 p-4 text-sm font-medium text-slate-400">
-              💳 Payments are managed per booking
-            </div>
-            <div className="rounded-xl bg-slate-50 p-4 text-sm font-medium text-slate-400">
-              🔒 Block stalls (coming soon)
-            </div>
-            <div className="rounded-xl bg-slate-50 p-4 text-sm font-medium text-slate-400">
-              📈 Analytics (coming soon)
-            </div>
-          </div>
+        <section className="mt-8 border-t border-[#0a2348]/10 pt-7">
+          <p className="eyebrow text-[#0867d9]">Workspace overview</p>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-[#0a2348]/60">Use the admin sidebar to manage exhibitions, bookings, team access, and workspace tools.</p>
         </section>
       </div>
     </main>

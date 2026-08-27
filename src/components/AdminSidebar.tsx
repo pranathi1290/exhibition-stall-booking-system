@@ -15,6 +15,12 @@ const links = [
   { href: "/admin/bookings/create", label: "Manual booking", icon: "04" },
 ];
 
+const upcomingLinks = [
+  { label: "Payments", icon: "05" },
+  { label: "Block stalls", icon: "06" },
+  { label: "Analytics", icon: "07" },
+];
+
 export default function AdminSidebar({ role }: AdminSidebarProps) {
   const pathname = usePathname();
 
@@ -37,10 +43,18 @@ export default function AdminSidebar({ role }: AdminSidebarProps) {
         ))}
         {role === "SUPER_ADMIN" && (
           <Link href="/admin/team" className={`flex min-w-max items-center gap-3 border px-3 py-2.5 text-xs font-bold uppercase tracking-[0.08em] transition lg:mt-5 lg:w-full lg:px-4 lg:py-3 ${isActive("/admin/team") ? "border-[#0867d9] bg-[#0867d9] text-white shadow-lg shadow-[#0867d9]/20" : "border-transparent text-white/55 hover:border-white/15 hover:bg-white/10 hover:text-white"}`}>
-            <span className="text-[0.65rem] text-[#76aef2]">05</span>
+            <span className="text-[0.65rem] text-[#76aef2]">08</span>
             Team access
           </Link>
         )}
+        <span className="hidden px-4 pt-7 pb-2 text-[0.6rem] font-bold uppercase tracking-[0.2em] text-white/30 lg:block">Workspace tools</span>
+        {upcomingLinks.map((link) => (
+          <span key={link.label} aria-disabled="true" className="flex min-w-max items-center gap-3 border border-transparent px-3 py-2.5 text-xs font-bold uppercase tracking-[0.08em] text-white/30 lg:w-full lg:px-4 lg:py-3">
+            <span className="text-[0.65rem] text-[#76aef2]/50">{link.icon}</span>
+            {link.label}
+            <span className="ml-auto hidden text-[0.55rem] tracking-normal text-white/25 lg:block">Soon</span>
+          </span>
+        ))}
       </nav>
       <div className="hidden border-t border-white/10 p-5 lg:block">
         <Link href="/" className="block text-xs font-bold uppercase tracking-[0.08em] text-white/55 transition hover:text-white">View public site <span className="ml-1 text-[#76aef2]">↗</span></Link>
