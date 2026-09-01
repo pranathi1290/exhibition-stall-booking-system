@@ -11,6 +11,7 @@ import { getHoldConflictMessage, HOLD_DURATION_MINUTES, isHoldExpired } from "./
 
 type ExhibitionRecord = NonNullable<Awaited<ReturnType<typeof prisma.exhibition.findFirst>>>;
 type StallRecord = NonNullable<Awaited<ReturnType<typeof prisma.stall.findFirst>>>;
+type PublicExhibitionRecord = ExhibitionRecord & { _count: { stalls: number } };
 type UserProfile = {
   id: string;
   email: string;
@@ -25,10 +26,17 @@ type UserProfile = {
 // PUBLIC QUERIES (no auth needed)
 // ============================================================================
 
-export async function getPublicExhibitions(): Promise<ExhibitionRecord[]> {
+export async function getPublicExhibitions(): Promise<PublicExhibitionRecord[]> {
   return prisma.exhibition.findMany({
     where: { status: "ACTIVE" },
     orderBy: { startDate: "asc" },
+    include: {
+      _count: {
+        select: {
+          stalls: { where: { status: "AVAILABLE" } },
+        },
+      },
+    },
   });
 }
 

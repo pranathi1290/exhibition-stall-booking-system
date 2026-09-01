@@ -31,6 +31,7 @@ export default async function HomePage() {
   const session = await getUserSession();
   const bookings = session ? await getUserBookingHistory() : [];
   const featured = exhibitions.slice(0, 3);
+  const nextExhibition = featured[0];
 
   return (
     <main className="site-shell min-h-screen bg-white text-[#0a2348]">
@@ -42,16 +43,16 @@ export default async function HomePage() {
           <div className="reveal max-w-4xl">
             <p className="eyebrow text-[#76aef2]">ExpoStall / Book. Exhibit. Grow.</p>
             <h1 className="display-title mt-6 max-w-4xl text-6xl sm:text-8xl">Your next space to <em>stand out.</em></h1>
-            <p className="mt-8 max-w-xl text-lg leading-8 text-white/75">Discover high-energy exhibitions, choose your position on the map, and reserve a booth built for the conversations that matter.</p>
+            <p className="mt-8 max-w-xl text-lg leading-8 text-white/75">Compare available spaces, view the floor plan, and reserve the right position for your team before the exhibition fills.</p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Link href="/exhibitions" className="rounded-full bg-[#0867d9] px-6 py-3.5 font-bold text-white shadow-xl shadow-[#0867d9]/25 transition hover:-translate-y-0.5 hover:bg-[#2d83ed]">Explore exhibitions <span className="ml-2">↗</span></Link>
               <Link href={session ? "/dashboard" : "/register"} className="rounded-full border border-white/35 bg-white/10 px-6 py-3.5 font-bold text-white backdrop-blur transition hover:bg-white/20">{session ? "Open my dashboard" : "Create your profile"}</Link>
             </div>
           </div>
           <div className="reveal reveal-delay-2 grid max-w-3xl grid-cols-3 border-t border-white/25 pt-5 text-sm">
-            <div><p className="text-3xl font-bold text-[#76aef2]">{exhibitions.length || "02"}</p><p className="mt-1 text-white/60">Live exhibitions</p></div>
+            <div><p className="text-3xl font-bold text-[#76aef2]">{exhibitions.length}</p><p className="mt-1 text-white/60">Live exhibitions</p></div>
             <div><p className="text-3xl font-bold text-[#76aef2]">10 min</p><p className="mt-1 text-white/60">Stall hold window</p></div>
-            <div><p className="text-3xl font-bold text-[#76aef2]">50%</p><p className="mt-1 text-white/60">Advance to confirm</p></div>
+            <div><p className="text-3xl font-bold text-[#76aef2]">{nextExhibition?._count.stalls ?? 0}</p><p className="mt-1 text-white/60">Spaces in next event</p></div>
           </div>
         </div>
       </section>
@@ -82,7 +83,7 @@ export default async function HomePage() {
               {featured.map((exhibition, index) => (
                   <Link key={exhibition.id} href={`/exhibitions/${exhibition.id}`} className={`group overflow-hidden rounded-sm border border-[#0a2348]/12 bg-white shadow-[0_12px_40px_rgba(10,35,72,.06)] transition duration-300 hover:-translate-y-1 hover:border-[#0867d9]/45 hover:shadow-[0_20px_50px_rgba(8,103,217,.12)] ${index === 0 ? "lg:col-span-2" : ""}`}>
                     <div className="relative aspect-[16/7] overflow-hidden bg-[#eaf3ff]"><ExhibitionImage src={exhibition.bannerUrl || fallbackExhibitionImage} alt={exhibition.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /><span className="absolute left-5 top-5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#0a2348]">Featured {String(index + 1).padStart(2, "0")}</span></div>
-                    <div className="flex min-h-64 flex-col justify-between p-6 sm:p-7"><div><p className="eyebrow text-[#0867d9]">{new Date(exhibition.startDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" })} - {new Date(exhibition.endDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</p><h3 className="mt-4 text-2xl font-bold text-[#0a2348]">{exhibition.name}</h3><p className="mt-3 line-clamp-2 text-sm leading-6 text-[#0a2348]/65">{exhibition.description}</p></div><div className="mt-8 flex items-center justify-between gap-3 text-sm font-bold text-[#0a2348]/80"><span>{exhibition.venue}</span>{exhibition.locationUrl ? <a href={exhibition.locationUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="shrink-0 text-[#0867d9] transition hover:text-[#0a2348]">Location ↗</a> : <span className="shrink-0 text-[#0867d9] transition group-hover:translate-x-1">Explore ↗</span>}</div></div>
+                    <div className="flex min-h-64 flex-col justify-between p-6 sm:p-7"><div><p className="eyebrow text-[#0867d9]">{new Date(exhibition.startDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" })} - {new Date(exhibition.endDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</p><h3 className="mt-4 text-2xl font-bold text-[#0a2348]">{exhibition.name}</h3><p className="mt-3 line-clamp-2 text-sm leading-6 text-[#0a2348]/65">{exhibition.description}</p></div><div className="mt-8 flex items-center justify-between gap-3 border-t border-[#0a2348]/10 pt-4 text-sm font-bold text-[#0a2348]/80"><span>{exhibition._count.stalls} spaces available</span>{exhibition.locationUrl ? <a href={exhibition.locationUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="shrink-0 text-[#0867d9] transition hover:text-[#0a2348]">Location ↗</a> : <span className="shrink-0 text-[#0867d9] transition group-hover:translate-x-1">View floor ↗</span>}</div></div>
                 </Link>
               ))}
             </div>
