@@ -13,6 +13,11 @@ export default function SiteNav({ hasSession }: { hasSession: boolean }) {
       <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
         <BrandLogo />
         <div className="flex flex-wrap items-center gap-1 text-xs font-bold uppercase tracking-[0.12em]">
+          {!isAdminPortal && (
+            <Link href="/" className="rounded-sm px-4 py-2 text-[#0a2348]/65 transition hover:bg-[#eaf3ff] hover:text-[#0867d9]">
+              Home
+            </Link>
+          )}
             <Link href="/exhibitions" className="rounded-sm px-4 py-2 text-[#0a2348]/65 transition hover:bg-[#eaf3ff] hover:text-[#0867d9]">
             Exhibitions
           </Link>
