@@ -3,7 +3,9 @@ import { getPublicStallById, holdStall } from "@/lib/public";
 import { normalizeCurrency } from "@/lib/booking";
 import { getUserSession } from "@/lib/user-auth";
 import { getHoldConflictMessage, isHoldExpired } from "@/lib/booking-workflow";
+import { isRazorpayConfigured } from "@/lib/razorpay";
 import RazorpayCheckout from "@/components/RazorpayCheckout";
+import DemoCheckout from "@/components/DemoCheckout";
 import HoldCountdown from "@/components/HoldCountdown";
 
 const STATUS_TEXT_COLOR: Record<string, string> = {
@@ -19,7 +21,7 @@ export default async function BookStallPage({
   params: Promise<{ stallId: string }>;
 }) {
   const { stallId } = await params;
-  const session = await getUserSession();
+  const [session, hasRazorpay] = await Promise.all([getUserSession(), isRazorpayConfigured()]);
 
   let stall = await getPublicStallById(stallId);
   let holdError: string | undefined;
@@ -110,7 +112,11 @@ export default async function BookStallPage({
               <div className="flex justify-between"><span>Remaining</span><strong className="text-slate-900">{normalizeCurrency(Number(stall.price.minus(stall.advanceAmount)))}</strong></div>
             </div>
             {isOwnerHold ? (
-              <RazorpayCheckout exhibitionId={stall.exhibitionId} stallId={stall.id} amountLabel={normalizeCurrency(Number(stall.advanceAmount))} />
+              hasRazorpay ? (
+                <RazorpayCheckout exhibitionId={stall.exhibitionId} stallId={stall.id} amountLabel={normalizeCurrency(Number(stall.advanceAmount))} />
+              ) : (
+                <DemoCheckout exhibitionId={stall.exhibitionId} stallId={stall.id} amountLabel={normalizeCurrency(Number(stall.advanceAmount))} />
+              )
             ) : !session ? (
               <Link href={`/login?redirect=${encodeURIComponent(`/book/${stall.id}`)}`} className="mt-6 block rounded-xl bg-slate-900 px-4 py-3 text-center font-semibold text-white">Login to continue</Link>
             ) : (

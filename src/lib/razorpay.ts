@@ -18,6 +18,10 @@ function getRazorpay() {
   return new Razorpay({ key_id: razorpayKeyId, key_secret: razorpayKeySecret });
 }
 
+export async function isRazorpayConfigured(): Promise<boolean> {
+  return Boolean(razorpayKeyId && razorpayKeySecret);
+}
+
 function toPaise(amount: number | { toNumber: () => number }) {
   const numericAmount = typeof amount === "number" ? amount : amount.toNumber();
   const paise = Math.round(numericAmount * 100);
