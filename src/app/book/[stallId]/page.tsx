@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { getPublicStallById } from "@/lib/public";
+import { getPublicStallById, holdStall } from "@/lib/public";
 import { normalizeCurrency } from "@/lib/booking";
 import { getUserSession } from "@/lib/user-auth";
+import { isHoldExpired } from "@/lib/booking-workflow";
 import RazorpayCheckout from "@/components/RazorpayCheckout";
+import HoldCountdown from "@/components/HoldCountdown";
 
 export default async function BookStallPage({
   params,
@@ -10,8 +12,20 @@ export default async function BookStallPage({
   params: Promise<{ stallId: string }>;
 }) {
   const { stallId } = await params;
-  const stall = await getPublicStallById(stallId);
   const session = await getUserSession();
+
+  let stall = await getPublicStallById(stallId);
+  let holdError: string | undefined;
+
+  // Claim a 10-minute hold as soon as a logged-in user opens an available stall
+  if (session && stall?.status === "AVAILABLE") {
+    const hold = await holdStall(stallId);
+    if (hold.success) {
+      stall = await getPublicStallById(stallId);
+    } else {
+      holdError = hold.error;
+    }
+  }
 
   if (!stall) {
     return (
@@ -25,6 +39,14 @@ export default async function BookStallPage({
       </main>
     );
   }
+
+  const isOwnerHold = Boolean(
+    session &&
+    stall.status === "HELD" &&
+    stall.heldByUserId === session.userId &&
+    stall.heldUntil &&
+    !isHoldExpired(stall.status, stall.heldUntil)
+  );
 
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10 text-slate-900">
@@ -54,10 +76,18 @@ export default async function BookStallPage({
               </div>
             </div>
 
-            <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <p className="font-semibold text-amber-900">Online booking is coming soon</p>
-              <p className="mt-2 text-sm text-amber-800">Payment is not enabled yet. Your selected stall remains available until booking opens.</p>
-            </div>
+            {isOwnerHold ? (
+              <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                <p className="font-semibold text-emerald-900">Stall reserved for you</p>
+                <p className="mt-2 text-sm text-emerald-800">Complete payment before the hold expires, or it will be released for other users.</p>
+                <HoldCountdown stallId={stall.id} heldUntil={stall.heldUntil!.toISOString()} />
+              </div>
+            ) : holdError ? (
+              <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-5">
+                <p className="font-semibold text-red-900">Unable to reserve this stall</p>
+                <p className="mt-2 text-sm text-red-800">{holdError}</p>
+              </div>
+            ) : null}
           </div>
 
           <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -67,16 +97,19 @@ export default async function BookStallPage({
               <div className="flex justify-between"><span>Advance ({stall.advancePercentage}%)</span><strong className="text-slate-900">{normalizeCurrency(Number(stall.advanceAmount))}</strong></div>
               <div className="flex justify-between"><span>Remaining</span><strong className="text-slate-900">{normalizeCurrency(Number(stall.price.minus(stall.advanceAmount)))}</strong></div>
             </div>
-            {stall.status === "AVAILABLE" && session ? (
+            {isOwnerHold ? (
               <RazorpayCheckout exhibitionId={stall.exhibitionId} stallId={stall.id} amountLabel={normalizeCurrency(Number(stall.advanceAmount))} />
-            ) : stall.status !== "AVAILABLE" ? (
-              <p className="mt-6 rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-semibold text-slate-600">This stall is {stall.status.toLowerCase()}.</p>
+            ) : !session ? (
+              <Link href={`/login?redirect=${encodeURIComponent(`/book/${stall.id}`)}`} className="mt-6 block rounded-xl bg-slate-900 px-4 py-3 text-center font-semibold text-white">Login to continue</Link>
             ) : (
-              <Link href="/login" className="mt-6 block rounded-xl bg-slate-900 px-4 py-3 text-center font-semibold text-white">Login to continue</Link>
+              <p className="mt-6 rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-semibold text-slate-600">
+                {holdError || `This stall is ${stall.status.toLowerCase()}.`}
+              </p>
             )}
           </aside>
         </div>
       </div>
+
     </main>
   );
 }
