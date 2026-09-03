@@ -2,9 +2,16 @@ import Link from "next/link";
 import { getPublicStallById, holdStall } from "@/lib/public";
 import { normalizeCurrency } from "@/lib/booking";
 import { getUserSession } from "@/lib/user-auth";
-import { isHoldExpired } from "@/lib/booking-workflow";
+import { getHoldConflictMessage, isHoldExpired } from "@/lib/booking-workflow";
 import RazorpayCheckout from "@/components/RazorpayCheckout";
 import HoldCountdown from "@/components/HoldCountdown";
+
+const STATUS_TEXT_COLOR: Record<string, string> = {
+  AVAILABLE: "text-green-700",
+  HELD: "text-yellow-700",
+  BOOKED: "text-red-700",
+  BLOCKED: "text-gray-700",
+};
 
 export default async function BookStallPage({
   params,
@@ -48,6 +55,11 @@ export default async function BookStallPage({
     !isHoldExpired(stall.status, stall.heldUntil)
   );
 
+  // Message shown to anyone who doesn't own the current hold, e.g. "Stall is currently held by another user"
+  const conflictMessage = isOwnerHold
+    ? undefined
+    : holdError ?? (stall.status !== "AVAILABLE" ? getHoldConflictMessage(stall.status, stall.heldUntil) : undefined);
+
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-10 text-slate-900">
       <div className="mx-auto max-w-5xl">
@@ -72,7 +84,7 @@ export default async function BookStallPage({
               </div>
               <div className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Status</p>
-                <p className="mt-2 text-xl font-bold text-green-700">{stall.status}</p>
+                <p className={`mt-2 text-xl font-bold ${STATUS_TEXT_COLOR[stall.status] ?? "text-slate-700"}`}>{stall.status}</p>
               </div>
             </div>
 
@@ -82,10 +94,10 @@ export default async function BookStallPage({
                 <p className="mt-2 text-sm text-emerald-800">Complete payment before the hold expires, or it will be released for other users.</p>
                 <HoldCountdown stallId={stall.id} heldUntil={stall.heldUntil!.toISOString()} />
               </div>
-            ) : holdError ? (
+            ) : conflictMessage ? (
               <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-5">
-                <p className="font-semibold text-red-900">Unable to reserve this stall</p>
-                <p className="mt-2 text-sm text-red-800">{holdError}</p>
+                <p className="font-semibold text-red-900">{stall.status === "BOOKED" ? "Stall already booked" : "Unable to reserve this stall"}</p>
+                <p className="mt-2 text-sm text-red-800">{conflictMessage}</p>
               </div>
             ) : null}
           </div>
@@ -103,7 +115,7 @@ export default async function BookStallPage({
               <Link href={`/login?redirect=${encodeURIComponent(`/book/${stall.id}`)}`} className="mt-6 block rounded-xl bg-slate-900 px-4 py-3 text-center font-semibold text-white">Login to continue</Link>
             ) : (
               <p className="mt-6 rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-semibold text-slate-600">
-                {holdError || `This stall is ${stall.status.toLowerCase()}.`}
+                {conflictMessage ?? `This stall is ${stall.status.toLowerCase()}.`}
               </p>
             )}
           </aside>
